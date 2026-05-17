@@ -51,6 +51,12 @@ export function useTimer() {
 
     clearTick();
     const newPhase = completePhase();
+    // autoStart 模式下 completePhase 将 status 保持为 "running"，
+    // 但 status 值未发生变化，第一个 effect 不会重新触发创建新 interval，
+    // 需要在此处手动重启。
+    if (useTimerStore.getState().status === "running") {
+      intervalRef.current = setInterval(() => tick(), 1000);
+    }
     const isFocusDone = newPhase === "break" || newPhase === "longBreak";
     const isLongBreak = newPhase === "longBreak";
 

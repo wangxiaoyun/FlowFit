@@ -53,7 +53,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   tick: () => {
     const { remaining, status } = get();
     if (status !== "running") return;
-    if (remaining <= 1) return;
+    if (remaining <= 0) return;
     set({ remaining: remaining - 1 });
   },
 
