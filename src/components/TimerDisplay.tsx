@@ -3,12 +3,17 @@ import { TimerControls } from "./TimerControls";
 import { useTimerStore } from "../store/timerStore";
 import { useTimer } from "../hooks/useTimer";
 import { PHASE_COLORS } from "../constants";
+import { useTaskStore } from "../store/taskStore";
 
 /**
  * 计时器主视图：阶段标签、环形进度、时间、控制按钮。
  */
 export function TimerDisplay() {
-  const { phase, status, remaining, settings, sessionCount } = useTimerStore();
+  const { phase, status, remaining, settings, sessionCount, activeTaskId } = useTimerStore();
+  // 从 taskStore 中查找当前激活任务的标题，用于在计时环内展示
+  const activeTaskTitle = useTaskStore((s) =>
+    activeTaskId ? (s.tasks.find((t) => t.id === activeTaskId)?.title ?? null) : null
+  );
   useTimer();
 
   const totalSeconds =
@@ -79,7 +84,13 @@ export function TimerDisplay() {
         strokeColor={strokeColor}
         trackColor={trackColor}
       >
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1.5 text-center">
+          {/* 若有激活任务则显示任务名胶囊标签 */}
+          {activeTaskTitle && (
+            <span className="max-w-[160px] truncate text-xs text-neutral-500 dark:text-neutral-400">
+              📌 {activeTaskTitle}
+            </span>
+          )}
           <span className="font-mono text-5xl font-light tracking-tight text-neutral-900 dark:text-white sm:text-6xl">
             {timeStr}
           </span>
