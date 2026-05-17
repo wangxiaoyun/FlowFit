@@ -2,6 +2,8 @@ import { create } from "zustand";
 import type { Milestone, MilestoneTask } from "../types";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
 import { STORAGE_KEYS } from "../constants";
+import { writeDataFile } from "../utils/fileStorage";
+import { useTimerStore } from "./timerStore";
 
 interface MilestoneStore {
   milestones: Milestone[];
@@ -20,8 +22,14 @@ function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function getDataPath(): string {
+  return useTimerStore.getState().settings.dataPath ?? "";
+}
+
 function persist(milestones: Milestone[]) {
   saveToStorage(STORAGE_KEYS.MILESTONES, milestones);
+  const dp = getDataPath();
+  if (dp) writeDataFile(dp, "pomodoro-milestones.json", milestones).catch(() => {});
 }
 
 export const useMilestoneStore = create<MilestoneStore>((set, get) => ({

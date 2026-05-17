@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { TimerPhase, TimerStatus, Settings } from "../types";
 import { DEFAULT_SETTINGS } from "../constants";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
+import { writeDataFile } from "../utils/fileStorage";
 
 interface TimerStore {
   phase: TimerPhase;
@@ -105,6 +106,9 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     const { settings, phase } = get();
     const merged = { ...settings, ...partial };
     saveToStorage("pomodoro-settings", merged);
+    // 当有配置路径时，同步备份设置文件
+    const dp = merged.dataPath;
+    if (dp) writeDataFile(dp, "pomodoro-settings.json", merged).catch(() => {});
     set({
       settings: merged,
       remaining: shouldRecalculate(phase, partial)

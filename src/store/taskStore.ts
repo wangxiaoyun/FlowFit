@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { Task, DailyStats } from "../types";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
+import { writeDataFile } from "../utils/fileStorage";
+import { useTimerStore } from "./timerStore";
 
 interface TaskStore {
   tasks: Task[];
@@ -26,6 +28,22 @@ function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function getDataPath(): string {
+  return useTimerStore.getState().settings.dataPath ?? "";
+}
+
+function persistTasks(tasks: Task[]) {
+  saveToStorage("pomodoro-tasks", tasks);
+  const dp = getDataPath();
+  if (dp) writeDataFile(dp, "pomodoro-tasks.json", tasks).catch(() => {});
+}
+
+function persistStats(stats: DailyStats[]) {
+  saveToStorage("pomodoro-stats", stats);
+  const dp = getDataPath();
+  if (dp) writeDataFile(dp, "pomodoro-stats.json", stats).catch(() => {});
+}
+
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: loadFromStorage("pomodoro-tasks", []),
   dailyStats: loadFromStorage("pomodoro-stats", []),
@@ -42,13 +60,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       date: today(),
     };
     const tasks = [...get().tasks, newTask];
-    saveToStorage("pomodoro-tasks", tasks);
+    persistTasks(tasks);
     set({ tasks });
   },
 
   removeTask: (id: string) => {
     const tasks = get().tasks.filter((t) => t.id !== id);
-    saveToStorage("pomodoro-tasks", tasks);
+    persistTasks(tasks);
     set({ tasks });
   },
 
@@ -56,7 +74,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const tasks = get().tasks.map((t) =>
       t.id === id ? { ...t, completed: !t.completed } : t,
     );
-    saveToStorage("pomodoro-tasks", tasks);
+    persistTasks(tasks);
     set({ tasks });
   },
 
@@ -65,7 +83,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const tasks = get().tasks.map((t) =>
       t.id === id ? { ...t, pomodoroCount: t.pomodoroCount + 1 } : t,
     );
-    saveToStorage("pomodoro-tasks", tasks);
+    persistTasks(tasks);
     set({ tasks });
   },
 
@@ -133,7 +151,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     // Keep last 90 days
     const pruned = stats.slice(-90);
-    saveToStorage("pomodoro-stats", pruned);
+    persistStats(pruned);
     set({ dailyStats: pruned });
   },
 }));

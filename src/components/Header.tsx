@@ -11,10 +11,13 @@ import {
   BellRinging,
   Link,
   Question,
+  FolderOpen,
+  HardDrive,
 } from "@phosphor-icons/react";
 import { useTheme } from "../hooks/useTheme";
 import { useTimerStore } from "../store/timerStore";
 import type { Settings } from "../types";
+import { isTauri, selectDirectory } from "../utils/fileStorage";
 
 /**
  * 顶部导航栏：应用标题、主题切换、使用说明、设置入口。
@@ -151,6 +154,7 @@ function HelpDialog({ onClose }: { onClose: () => void }) {
 /** 设置弹窗 */
 function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { settings, updateSettings } = useTimerStore();
+  const [pickingDir, setPickingDir] = useState(false);
 
   const handleChange = useCallback(
     (partial: Partial<Settings>) => {
@@ -158,6 +162,13 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
     },
     [updateSettings],
   );
+
+  const handleSelectDataPath = async () => {
+    setPickingDir(true);
+    const dir = await selectDirectory();
+    setPickingDir(false);
+    if (dir) handleChange({ dataPath: dir });
+  };
 
   return (
     <div
@@ -296,6 +307,43 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             />
             <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
               在飞书创建群机器人，将 Webhook 地址粘贴到此处，完成番茄钟后自动发送通知。
+            </p>
+          </div>
+
+          {/* 数据文件目录（仅桌面端可用） */}
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <HardDrive size={14} />
+              本地数据备份目录
+            </label>
+            <div className="flex gap-2">
+              <div className="min-w-0 flex-1 truncate rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-400">
+                {settings.dataPath || "未设置（仅存储在浏览器本地）"}
+              </div>
+              {isTauri && (
+                <button
+                  onClick={handleSelectDataPath}
+                  disabled={pickingDir}
+                  className="flex shrink-0 items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-100 disabled:cursor-wait disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+                >
+                  <FolderOpen size={13} />
+                  选择
+                </button>
+              )}
+              {settings.dataPath && (
+                <button
+                  onClick={() => handleChange({ dataPath: "" })}
+                  className="flex shrink-0 items-center rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-2 text-neutral-400 hover:text-red-500 dark:border-neutral-600 dark:bg-neutral-700"
+                  aria-label="清除数据路径"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+              {isTauri
+                ? "设置后，任务、统计、目标数据将实时同步写入该目录的 JSON 文件，防止数据丢失。"
+                : "需在桌面应用（exe）中使用此功能。"}
             </p>
           </div>
 

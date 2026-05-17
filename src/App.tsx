@@ -22,20 +22,20 @@ export default function App() {
       <div className="mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-6">
         <Header />
         <main className="flex flex-1 gap-8 pb-8 pt-4">
-          {/* 左列：计时器 + 统计 + 项目目标 */}
-          <div className="flex w-[380px] shrink-0 flex-col gap-8">
+          {/* 左列：计时器 + 统计 */}
+          <div className="flex w-[320px] shrink-0 flex-col gap-8">
             <TimerDisplay />
             <div className="border-t border-neutral-100 dark:border-neutral-800" />
             <StatsPanel />
-            <div className="border-t border-neutral-100 dark:border-neutral-800" />
-            <MilestonePanel />
           </div>
 
           {/* 列分隔线 */}
           <div className="w-px bg-neutral-100 dark:bg-neutral-800" />
 
-          {/* 右列：任务列表 + 周图表 */}
+          {/* 右列：项目目标 + 任务列表 + 周图表 */}
           <div className="flex min-w-0 flex-1 flex-col gap-8">
+            <MilestonePanel />
+            <div className="border-t border-neutral-100 dark:border-neutral-800" />
             <TaskList />
             <div className="border-t border-neutral-100 dark:border-neutral-800" />
             <WeekChart />

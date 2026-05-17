@@ -6,15 +6,20 @@ import {
   CaretDown,
   CaretRight,
   Flag,
+  ArrowRight,
 } from "@phosphor-icons/react";
 import { useMilestoneStore } from "../store/milestoneStore";
+import { useTaskStore } from "../store/taskStore";
 
 /** 单个里程碑卡片，含折叠/展开、子任务管理 */
 function MilestoneCard({ id }: { id: string }) {
   const { milestones, removeMilestone, toggleCollapse, addMilestoneTask, removeMilestoneTask, toggleMilestoneTask } =
     useMilestoneStore();
+  const addTask = useTaskStore((s) => s.addTask);
   const milestone = milestones.find((m) => m.id === id);
   const [taskInput, setTaskInput] = useState("");
+  // 记录刚刚点击"加入任务"的子任务 id，用于短暂视觉反馈
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   if (!milestone) return null;
 
@@ -25,6 +30,24 @@ function MilestoneCard({ id }: { id: string }) {
     e.preventDefault();
     addMilestoneTask(id, taskInput);
     setTaskInput("");
+  };
+
+  /** 将子任务标题快速添加到今日番茄任务 */
+  const handleAddToPomodoro = (taskId: string, title: string) => {
+    addTask(title);
+    setAddedIds((prev) => {
+      const next = new Set(prev);
+      next.add(taskId);
+      // 1.5 秒后移除反馈状态
+      setTimeout(() => {
+        setAddedIds((s) => {
+          const ns = new Set(s);
+          ns.delete(taskId);
+          return ns;
+        });
+      }, 1500);
+      return next;
+    });
   };
 
   return (
@@ -83,37 +106,56 @@ function MilestoneCard({ id }: { id: string }) {
       {!milestone.collapsed && (
         <div className="pb-3">
           <ul className="space-y-1 px-4">
-            {milestone.tasks.map((task) => (
-              <li key={task.id} className="group/task flex items-center gap-2">
-                <button
-                  onClick={() => toggleMilestoneTask(id, task.id)}
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                    task.done
-                      ? "border-green-400 bg-green-400 dark:border-green-500 dark:bg-green-500"
-                      : "border-neutral-300 hover:border-pomodoro-400 dark:border-neutral-600"
-                  }`}
-                  aria-label={task.done ? "取消完成" : "标记完成"}
-                >
-                  {task.done && <Check size={10} weight="bold" className="text-white" />}
-                </button>
-                <span
-                  className={`flex-1 text-xs ${
-                    task.done
-                      ? "text-neutral-400 line-through dark:text-neutral-500"
-                      : "text-neutral-700 dark:text-neutral-300"
-                  }`}
-                >
-                  {task.title}
-                </span>
-                <button
-                  onClick={() => removeMilestoneTask(id, task.id)}
-                  className="opacity-0 transition-opacity group-hover/task:opacity-100"
-                  aria-label={`删除"${task.title}"`}
-                >
-                  <Trash size={13} className="text-neutral-300 hover:text-red-400 dark:text-neutral-600" />
-                </button>
-              </li>
-            ))}
+            {milestone.tasks.map((task) => {
+              const added = addedIds.has(task.id);
+              return (
+                <li key={task.id} className="group/task flex items-center gap-2">
+                  <button
+                    onClick={() => toggleMilestoneTask(id, task.id)}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                      task.done
+                        ? "border-green-400 bg-green-400 dark:border-green-500 dark:bg-green-500"
+                        : "border-neutral-300 hover:border-pomodoro-400 dark:border-neutral-600"
+                    }`}
+                    aria-label={task.done ? "取消完成" : "标记完成"}
+                  >
+                    {task.done && <Check size={10} weight="bold" className="text-white" />}
+                  </button>
+                  <span
+                    className={`flex-1 text-xs ${
+                      task.done
+                        ? "text-neutral-400 line-through dark:text-neutral-500"
+                        : "text-neutral-700 dark:text-neutral-300"
+                    }`}
+                  >
+                    {task.title}
+                  </span>
+                  {/* 快速添加到今日番茄任务 */}
+                  {!task.done && (
+                    <button
+                      onClick={() => handleAddToPomodoro(task.id, task.title)}
+                      className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] opacity-0 transition-all group-hover/task:opacity-100 ${
+                        added
+                          ? "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400"
+                          : "text-neutral-400 hover:bg-pomodoro-50 hover:text-pomodoro-600 dark:hover:bg-pomodoro-500/10 dark:hover:text-pomodoro-400"
+                      }`}
+                      aria-label={`将"${task.title}"加入今日任务`}
+                      title="加入今日番茄任务"
+                    >
+                      {added ? <Check size={10} weight="bold" /> : <ArrowRight size={10} weight="bold" />}
+                      {added ? "已添加" : "加入任务"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => removeMilestoneTask(id, task.id)}
+                    className="opacity-0 transition-opacity group-hover/task:opacity-100"
+                    aria-label={`删除"${task.title}"`}
+                  >
+                    <Trash size={13} className="text-neutral-300 hover:text-red-400 dark:text-neutral-600" />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
 
           {/* 添加子任务输入框 */}

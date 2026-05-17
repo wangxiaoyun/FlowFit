@@ -34,6 +34,7 @@ export interface Settings {
   volume: number;           // 0-1
   desktopNotify: boolean;   // browser Notification API
   feishuWebhook: string;    // Feishu bot webhook URL (empty = disabled)
+  dataPath: string;         // 本地数据文件目录（空 = 仅 localStorage）
 }
 
 /** Timer store state */

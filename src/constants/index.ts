@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.5,
   desktopNotify: true,
   feishuWebhook: "",
+  dataPath: "",
 };
 
 export const STORAGE_KEYS = {
