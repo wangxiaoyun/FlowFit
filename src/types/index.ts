@@ -50,3 +50,20 @@ export interface TaskState {
   tasks: Task[];
   dailyStats: DailyStats[];
 }
+
+/** A single task within a milestone */
+export interface MilestoneTask {
+  id: string;
+  title: string;
+  done: boolean;
+  createdAt: number;
+}
+
+/** A project milestone / phase goal */
+export interface Milestone {
+  id: string;
+  title: string;
+  tasks: MilestoneTask[];
+  collapsed: boolean;
+  createdAt: number;
+}

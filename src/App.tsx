@@ -4,6 +4,7 @@ import { TimerDisplay } from "./components/TimerDisplay";
 import { StatsPanel } from "./components/StatsPanel";
 import { WeekChart } from "./components/WeekChart";
 import { TaskList } from "./components/TaskList";
+import { MilestonePanel } from "./components/MilestonePanel";
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
@@ -21,11 +22,13 @@ export default function App() {
       <div className="mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-6">
         <Header />
         <main className="flex flex-1 gap-8 pb-8 pt-4">
-          {/* 左列：计时器 + 统计 */}
+          {/* 左列：计时器 + 统计 + 项目目标 */}
           <div className="flex w-[380px] shrink-0 flex-col gap-8">
             <TimerDisplay />
             <div className="border-t border-neutral-100 dark:border-neutral-800" />
             <StatsPanel />
+            <div className="border-t border-neutral-100 dark:border-neutral-800" />
+            <MilestonePanel />
           </div>
 
           {/* 列分隔线 */}

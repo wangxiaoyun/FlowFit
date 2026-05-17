@@ -13,6 +13,8 @@ interface TaskStore {
   incrementPomodoro: (id: string | null) => void; // null = no active task
   getTodayStats: () => { totalPomodoros: number; completedTasks: number };
   recordPomodoro: () => void;
+  /** 返回高频历史任务标题（≥2天出现、今日未添加），最多5条 */
+  getSuggestedTasks: () => string[];
 }
 
 function today(): string {
@@ -74,6 +76,41 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       totalPomodoros: stats?.totalPomodoros ?? 0,
       completedTasks: stats?.completedTasks ?? 0,
     };
+  },
+
+  getSuggestedTasks: () => {
+    const todayStr = today();
+    const tasks = get().tasks;
+
+    // 今日已有的任务标题（规范化后）
+    const todayTitles = new Set(
+      tasks
+        .filter((t) => (t.date ?? todayStr) === todayStr)
+        .map((t) => t.title.trim().toLowerCase()),
+    );
+
+    // 统计过去 30 天（不含今天）每个标题出现了多少个不同日期
+    const dayMap = new Map<string, Set<string>>();
+    tasks.forEach((t) => {
+      const d = t.date ?? todayStr;
+      if (d === todayStr) return;
+      const key = t.title.trim().toLowerCase();
+      if (!dayMap.has(key)) dayMap.set(key, new Set());
+      dayMap.get(key)!.add(d);
+    });
+
+    // 取出现天数 >= 2 且今日未添加的，按频率降序，最多5条
+    return Array.from(dayMap.entries())
+      .filter(([key, days]) => days.size >= 2 && !todayTitles.has(key))
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, 5)
+      .map(([key]) => {
+        // 还原原始大小写：取最近一次使用的标题
+        const original = tasks
+          .filter((t) => t.title.trim().toLowerCase() === key && (t.date ?? todayStr) !== todayStr)
+          .sort((a, b) => b.createdAt - a.createdAt)[0];
+        return original?.title.trim() ?? key;
+      });
   },
 
   recordPomodoro: () => {

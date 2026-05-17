@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash, Check, Target } from "@phosphor-icons/react";
+import { Plus, Trash, Check, Target, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { useTaskStore } from "../store/taskStore";
 import { useTimerStore } from "../store/timerStore";
 
@@ -28,7 +28,7 @@ function getLast7Days(): { date: string; label: string }[] {
  * 旧任务若缺少 date 字段，回退到今天所在日期。
  */
 export function TaskList() {
-  const { tasks, addTask, removeTask, toggleComplete } = useTaskStore();
+  const { tasks, addTask, removeTask, toggleComplete, getSuggestedTasks } = useTaskStore();
   const activeTaskId = useTimerStore((s) => s.activeTaskId);
   const setActiveTask = useTimerStore((s) => s.setActiveTask);
   const [input, setInput] = useState("");
@@ -36,6 +36,9 @@ export function TaskList() {
 
   const days = getLast7Days();
   const isToday = selectedDate === todayStr();
+
+  // 仅在今日视图下计算推荐任务
+  const suggestedTasks = isToday ? getSuggestedTasks() : [];
 
   // 向后兼容：旧任务没有 date 字段时归入今天
   const dayTasks = tasks.filter((t) => (t.date ?? todayStr()) === selectedDate);
@@ -78,7 +81,7 @@ export function TaskList() {
 
       {/* 添加任务（仅今天可添加） */}
       {isToday && (
-        <form onSubmit={handleSubmit} className="mb-5 flex gap-2">
+        <form onSubmit={handleSubmit} className="mb-3 flex gap-2">
           <input
             type="text"
             value={input}
@@ -96,6 +99,28 @@ export function TaskList() {
             添加
           </button>
         </form>
+      )}
+
+      {/* 每日推荐任务：高频历史任务一键添加 */}
+      {isToday && suggestedTasks.length > 0 && (
+        <div className="mb-5">
+          <div className="mb-2 flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500">
+            <ArrowCounterClockwise size={12} weight="bold" />
+            常用任务快速添加
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {suggestedTasks.map((title) => (
+              <button
+                key={title}
+                onClick={() => addTask(title)}
+                className="flex items-center gap-1 rounded-full border border-dashed border-neutral-300 px-3 py-1 text-xs text-neutral-500 transition-colors hover:border-pomodoro-400 hover:bg-pomodoro-50 hover:text-pomodoro-600 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-pomodoro-500 dark:hover:bg-pomodoro-500/10 dark:hover:text-pomodoro-400"
+              >
+                <Plus size={11} weight="bold" />
+                {title}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 空状态 */}
