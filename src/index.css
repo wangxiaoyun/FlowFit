@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-pomodoro-50: #fef2f2;
+  --color-pomodoro-100: #fee2e2;
+  --color-pomodoro-200: #fecaca;
+  --color-pomodoro-300: #fca5a5;
+  --color-pomodoro-400: #f87171;
+  --color-pomodoro-500: #ef4444;
+  --color-pomodoro-600: #dc2626;
+  --color-pomodoro-700: #b91c1c;
+  --color-pomodoro-800: #991b1b;
+  --color-pomodoro-900: #7f1d1d;
+
+  --color-break-50: #f0fdf4;
+  --color-break-100: #dcfce7;
+  --color-break-200: #bbf7d0;
+  --color-break-300: #86efac;
+  --color-break-400: #4ade80;
+  --color-break-500: #22c55e;
+  --color-break-600: #16a34a;
+  --color-break-700: #15803d;
+  --color-break-800: #166534;
+  --color-break-900: #14532d;
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+}
+
+/*
+  Base styles
+*/
+:root {
+  --timer-color: var(--color-pomodoro-500);
+  --timer-bg: var(--color-pomodoro-100);
+}
+
+.dark {
+  --timer-color: var(--color-pomodoro-400);
+  --timer-bg: color-mix(in srgb, var(--color-pomodoro-500) 15%, transparent);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions for theme toggle */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* Prevent transition on page load */
+.preload * {
+  transition-duration: 0s !important;
+}
