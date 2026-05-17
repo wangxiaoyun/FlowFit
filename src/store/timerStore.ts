@@ -7,16 +7,16 @@ interface TimerStore {
   phase: TimerPhase;
   status: TimerStatus;
   remaining: number;         // seconds
-  currentPomodoro: number;   // consecutive pomodoros in current session
+  currentPomodoro: number;   // 跨会话累计番茄数（显示用）
+  sessionCount: number;      // 当前 session 内番茄数（长休息判断用，reset 时清零）
   settings: Settings;
 
-  // Actions
   start: () => void;
   pause: () => void;
   resume: () => void;
   reset: () => void;
   tick: () => void;
-  completePhase: () => TimerPhase;  // returns the NEW phase after transition
+  completePhase: () => TimerPhase;
   setPhase: (phase: TimerPhase) => void;
   updateSettings: (partial: Partial<Settings>) => void;
 }
@@ -26,19 +26,14 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   status: "idle",
   remaining: DEFAULT_SETTINGS.focusDuration * 60,
   currentPomodoro: loadFromStorage("pomodoro-consecutive", 0),
+  sessionCount: 0,
   settings: loadFromStorage("pomodoro-settings", DEFAULT_SETTINGS),
 
-  start: () => {
-    set({ status: "running" });
-  },
+  start: () => set({ status: "running" }),
 
-  pause: () => {
-    set({ status: "paused" });
-  },
+  pause: () => set({ status: "paused" }),
 
-  resume: () => {
-    set({ status: "running" });
-  },
+  resume: () => set({ status: "running" }),
 
   reset: () => {
     const { settings } = get();
@@ -46,36 +41,40 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       status: "idle",
       remaining: settings.focusDuration * 60,
       phase: "focus",
+      sessionCount: 0,
     });
   },
 
   tick: () => {
     const { remaining, status } = get();
     if (status !== "running") return;
-    if (remaining <= 1) return; // will be handled by completePhase
+    if (remaining <= 1) return;
     set({ remaining: remaining - 1 });
   },
 
-  /**
-   * Called when remaining reaches 0.
-   * Advances to the next phase, updates consecutive counter,
-   * persists state, and returns the new phase so the hook can play sound.
-   */
   completePhase: () => {
-    const { phase, settings, currentPomodoro } = get();
+    const { phase, settings, currentPomodoro, sessionCount } = get();
 
     if (phase === "focus") {
-      const newCount = currentPomodoro + 1;
-      saveToStorage("pomodoro-consecutive", newCount);
+      const newTotal = currentPomodoro + 1;
+      const newSession = sessionCount + 1;
+      saveToStorage("pomodoro-consecutive", newTotal);
+
+      // 每 longBreakInterval 个番茄触发长休息
+      const isLongBreak = newSession % settings.longBreakInterval === 0;
+      const nextPhase: TimerPhase = isLongBreak ? "longBreak" : "break";
+      const breakSecs = (isLongBreak ? settings.longBreakDuration : settings.breakDuration) * 60;
+
       set({
-        phase: "break",
+        phase: nextPhase,
         status: settings.autoStartBreak ? "running" : "idle",
-        remaining: settings.breakDuration * 60,
-        currentPomodoro: newCount,
+        remaining: breakSecs,
+        currentPomodoro: newTotal,
+        sessionCount: newSession,
       });
-      return "break";
+      return nextPhase;
     } else {
-      // Break is over, return to focus
+      // break 或 longBreak 结束，回到专注
       set({
         phase: "focus",
         status: settings.autoStartFocus ? "running" : "idle",
@@ -87,11 +86,13 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
 
   setPhase: (phase: TimerPhase) => {
     const { settings } = get();
-    set({
-      phase,
-      status: "idle",
-      remaining: phase === "focus" ? settings.focusDuration * 60 : settings.breakDuration * 60,
-    });
+    const remaining =
+      phase === "focus"
+        ? settings.focusDuration * 60
+        : phase === "longBreak"
+          ? settings.longBreakDuration * 60
+          : settings.breakDuration * 60;
+    set({ phase, status: "idle", remaining });
   },
 
   updateSettings: (partial: Partial<Settings>) => {
@@ -100,20 +101,23 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     saveToStorage("pomodoro-settings", merged);
     set({
       settings: merged,
-      // Recalculate remaining if idle and we changed the current phase's duration
       remaining: shouldRecalculate(phase, partial)
-        ? (phase === "focus" ? merged.focusDuration : merged.breakDuration) * 60
+        ? getDuration(phase, merged) * 60
         : get().remaining,
     });
   },
 }));
 
-function shouldRecalculate(
-  phase: TimerPhase,
-  partial: Partial<Settings>,
-): boolean {
+function getDuration(phase: TimerPhase, s: Settings): number {
+  if (phase === "focus") return s.focusDuration;
+  if (phase === "longBreak") return s.longBreakDuration;
+  return s.breakDuration;
+}
+
+function shouldRecalculate(phase: TimerPhase, partial: Partial<Settings>): boolean {
   return (
     (phase === "focus" && partial.focusDuration !== undefined) ||
-    (phase === "break" && (partial.breakDuration !== undefined))
+    (phase === "break" && partial.breakDuration !== undefined) ||
+    (phase === "longBreak" && partial.longBreakDuration !== undefined)
   );
 }

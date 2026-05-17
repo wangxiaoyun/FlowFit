@@ -9,27 +9,22 @@ import {
 } from "../utils/notify";
 
 /**
- * Core timer orchestration hook.
- * Manages the 1-second interval, completion detection,
- * sound/desktop/Feishu notifications, and pomodoro recording.
+ * 计时器核心编排 Hook。
+ * 管理 1 秒间隔、阶段完成检测、声音/桌面/飞书通知、番茄记录。
  */
 export function useTimer() {
-  const { status, remaining, settings, tick, completePhase } =
-    useTimerStore();
-
+  const { status, remaining, settings, tick, completePhase } = useTimerStore();
   const { recordPomodoro } = useTaskStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedRef = useRef(false);
   const permRequestedRef = useRef(false);
 
-  // Request desktop notification permission once on mount
   useEffect(() => {
     if (permRequestedRef.current) return;
     permRequestedRef.current = true;
     requestDesktopPermission();
   }, []);
 
-  // Clear interval helper
   const clearTick = useCallback(() => {
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
@@ -37,35 +32,29 @@ export function useTimer() {
     }
   }, []);
 
-  // Start / stop interval based on status
   useEffect(() => {
     if (status === "running") {
-      intervalRef.current = setInterval(() => {
-        tick();
-      }, 1000);
+      intervalRef.current = setInterval(() => tick(), 1000);
     } else {
       clearTick();
     }
     return clearTick;
   }, [status, tick, clearTick]);
 
-  // ── Completion handler ──────────────────────────────────────────────
   useEffect(() => {
     if (status !== "running" || remaining > 0) {
       completedRef.current = false;
       return;
     }
-
-    // Prevent double-fire
     if (completedRef.current) return;
     completedRef.current = true;
 
     clearTick();
-
     const newPhase = completePhase();
-    const isFocusDone = newPhase === "break";
+    const isFocusDone = newPhase === "break" || newPhase === "longBreak";
+    const isLongBreak = newPhase === "longBreak";
 
-    // 1) Sound notification
+    // 声音通知
     if (settings.soundEnabled) {
       if (isFocusDone) {
         playNotification(settings.volume);
@@ -75,30 +64,23 @@ export function useTimer() {
       }
     }
 
-    // 2) Desktop notification (browser Notification API)
+    // 桌面通知
     if (settings.desktopNotify) {
-      if (isFocusDone) {
-        sendDesktopNotification(
-          "Pomodoro Timer",
-          "Focus session complete! Time for a break.",
-        );
+      if (isLongBreak) {
+        sendDesktopNotification("番茄钟", "完成一组！好好休息一下吧 ☕");
+      } else if (isFocusDone) {
+        sendDesktopNotification("番茄钟", "专注完成！休息 5 分钟 🌿");
       } else {
-        sendDesktopNotification(
-          "Pomodoro Timer",
-          "Break is over. Ready to focus?",
-        );
+        sendDesktopNotification("番茄钟", "休息结束，继续加油！💪");
       }
     }
 
-    // 3) Feishu webhook push
+    // 飞书 Webhook
     if (isFocusDone && settings.feishuWebhook) {
       const sessionCount = useTimerStore.getState().currentPomodoro;
-      const text =
-        `🍅 Pomodoro Timer\n` +
-        `完成第 ${sessionCount} 个番茄钟\n` +
-        `休息 5 分钟，放松一下`;
-
-      // Fire-and-forget; don't block the UI
+      const text = isLongBreak
+        ? `🍅 番茄钟\n完成第 ${sessionCount} 个番茄钟（长休息）\n好好休息一下！`
+        : `🍅 番茄钟\n完成第 ${sessionCount} 个番茄钟\n休息 5 分钟，放松一下`;
       sendFeishuWebhook(settings.feishuWebhook, text);
     }
   }, [remaining, status, completePhase, settings, clearTick, recordPomodoro]);

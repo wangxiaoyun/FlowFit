@@ -1,5 +1,5 @@
 /** Timer session phase */
-export type TimerPhase = "focus" | "break";
+export type TimerPhase = "focus" | "break" | "longBreak";
 
 /** Timer running state */
 export type TimerStatus = "idle" | "running" | "paused";

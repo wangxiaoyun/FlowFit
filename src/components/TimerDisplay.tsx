@@ -5,16 +5,20 @@ import { useTimer } from "../hooks/useTimer";
 import { PHASE_COLORS } from "../constants";
 
 /**
- * 计时器主视图：阶段标签、环形进度、时间显示、控制按钮。
+ * 计时器主视图：阶段标签、环形进度、时间、控制按钮。
  */
 export function TimerDisplay() {
-  const { phase, status, remaining, settings } = useTimerStore();
-  useTimer(); // 驱动 1 秒间隔
+  const { phase, status, remaining, settings, sessionCount } = useTimerStore();
+  useTimer();
 
   const totalSeconds =
-    phase === "focus" ? settings.focusDuration * 60 : settings.breakDuration * 60;
-  const progress = 1 - remaining / totalSeconds;
+    phase === "focus"
+      ? settings.focusDuration * 60
+      : phase === "longBreak"
+        ? settings.longBreakDuration * 60
+        : settings.breakDuration * 60;
 
+  const progress = 1 - remaining / totalSeconds;
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
   const timeStr = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
@@ -24,34 +28,47 @@ export function TimerDisplay() {
   const strokeColor = isDark ? colors.darkStroke : colors.stroke;
   const trackColor = isDark ? colors.darkTrack : colors.track;
 
-  const phaseLabel = phase === "focus" ? "专注" : "休息";
-
-  const statusLabel = (() => {
-    if (phase === "focus") {
-      if (status === "idle") return " — 准备就绪";
-      if (status === "running") return " — 进行中";
-      if (status === "paused") return " — 已暂停";
-    } else {
-      if (status === "idle") return " — 开始休息";
-      if (status === "running") return " — 休息中";
-    }
+  // 阶段标签
+  const phaseLabel = phase === "focus" ? "专注" : phase === "longBreak" ? "长休息" : "休息";
+  const statusSuffix = (() => {
+    if (status === "idle") return phase === "focus" ? " — 准备就绪" : " — 开始休息";
+    if (status === "running") return phase === "focus" ? " — 进行中" : " — 休息中";
+    if (status === "paused") return " — 已暂停";
     return "";
   })();
+
+  // 长休息提示：显示本轮第几个番茄
+  const longBreakHint =
+    phase !== "focus"
+      ? null
+      : settings.longBreakInterval > 0
+        ? `${sessionCount % settings.longBreakInterval}/${settings.longBreakInterval}`
+        : null;
 
   return (
     <div className="flex flex-col items-center gap-8">
       {/* 阶段标签 */}
-      <div className="flex items-center gap-3">
-        <span
-          className={`inline-block h-2.5 w-2.5 rounded-full ${
-            phase === "focus"
-              ? "bg-pomodoro-500 dark:bg-pomodoro-400"
-              : "bg-break-500 dark:bg-break-400"
-          }`}
-        />
-        <span className="text-sm font-medium uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
-          {phaseLabel}{statusLabel}
-        </span>
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-3">
+          <span
+            className={`inline-block h-2.5 w-2.5 rounded-full ${
+              phase === "focus"
+                ? "bg-pomodoro-500 dark:bg-pomodoro-400"
+                : phase === "longBreak"
+                  ? "bg-violet-500 dark:bg-violet-400"
+                  : "bg-break-500 dark:bg-break-400"
+            }`}
+          />
+          <span className="text-sm font-medium uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
+            {phaseLabel}{statusSuffix}
+          </span>
+        </div>
+        {/* 长休息倒计提示 */}
+        {longBreakHint && (
+          <span className="text-xs text-neutral-400 dark:text-neutral-600">
+            本轮 {longBreakHint}，每 {settings.longBreakInterval} 个长休息
+          </span>
+        )}
       </div>
 
       {/* 环形进度 + 时间 */}

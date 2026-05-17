@@ -36,4 +36,10 @@ export const PHASE_COLORS = {
     darkStroke: "#4ade80",
     darkTrack: "rgba(34, 197, 94, 0.15)",
   },
+  longBreak: {
+    stroke: "#8b5cf6",
+    track: "#ddd6fe",
+    darkStroke: "#a78bfa",
+    darkTrack: "rgba(139, 92, 246, 0.15)",
+  },
 } as const;

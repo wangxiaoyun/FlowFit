@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Header } from "./components/Header";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { StatsPanel } from "./components/StatsPanel";
+import { WeekChart } from "./components/WeekChart";
 import { TaskList } from "./components/TaskList";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
           {/* Stats and Tasks */}
           <div className="flex w-full flex-col gap-8">
             <StatsPanel />
+            <WeekChart />
             <TaskList />
           </div>
         </main>

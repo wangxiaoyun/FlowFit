@@ -299,6 +299,42 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             </p>
           </div>
 
+          {/* 长休息时长 */}
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <Clock size={14} />
+              长休息时长（分钟）
+            </label>
+            <input
+              type="number"
+              min={5}
+              max={60}
+              value={settings.longBreakDuration}
+              onChange={(e) =>
+                handleChange({ longBreakDuration: Math.max(5, Number(e.target.value)) })
+              }
+              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 focus:border-pomodoro-400 focus:outline-none focus:ring-2 focus:ring-pomodoro-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+            />
+          </div>
+
+          {/* 长休息间隔 */}
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <Clock size={14} />
+              每几个番茄长休息一次
+            </label>
+            <input
+              type="number"
+              min={2}
+              max={10}
+              value={settings.longBreakInterval}
+              onChange={(e) =>
+                handleChange({ longBreakInterval: Math.max(2, Number(e.target.value)) })
+              }
+              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 focus:border-pomodoro-400 focus:outline-none focus:ring-2 focus:ring-pomodoro-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+            />
+          </div>
+
           {/* 自动连续 */}
           <div className="space-y-3">
             <label className="flex items-center gap-3 text-sm text-neutral-700 dark:text-neutral-200">
