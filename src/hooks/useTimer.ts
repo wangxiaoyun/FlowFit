@@ -13,8 +13,8 @@ import {
  * 管理 1 秒间隔、阶段完成检测、声音/桌面/飞书通知、番茄记录。
  */
 export function useTimer() {
-  const { status, remaining, settings, tick, completePhase } = useTimerStore();
-  const { recordPomodoro } = useTaskStore();
+  const { status, remaining, settings, tick, completePhase, activeTaskId } = useTimerStore();
+  const { recordPomodoro, incrementPomodoro } = useTaskStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedRef = useRef(false);
   const permRequestedRef = useRef(false);
@@ -59,6 +59,7 @@ export function useTimer() {
       if (isFocusDone) {
         playNotification(settings.volume);
         recordPomodoro();
+        incrementPomodoro(activeTaskId);
       } else {
         playBreakOver(settings.volume);
       }
@@ -83,5 +84,5 @@ export function useTimer() {
         : `🍅 番茄钟\n完成第 ${sessionCount} 个番茄钟\n休息 5 分钟，放松一下`;
       sendFeishuWebhook(settings.feishuWebhook, text);
     }
-  }, [remaining, status, completePhase, settings, clearTick, recordPomodoro]);
+  }, [remaining, status, completePhase, settings, clearTick, recordPomodoro, incrementPomodoro, activeTaskId]);
 }
