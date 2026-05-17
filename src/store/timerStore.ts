@@ -18,6 +18,8 @@ interface TimerStore {
   tick: () => void;
   completePhase: () => TimerPhase;
   setPhase: (phase: TimerPhase) => void;
+  activeTaskId: string | null;
+  setActiveTask: (id: string | null) => void;
   updateSettings: (partial: Partial<Settings>) => void;
 }
 
@@ -28,6 +30,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   currentPomodoro: loadFromStorage("pomodoro-consecutive", 0),
   sessionCount: 0,
   settings: loadFromStorage("pomodoro-settings", DEFAULT_SETTINGS),
+  activeTaskId: null,
 
   start: () => set({ status: "running" }),
 
@@ -42,6 +45,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       remaining: settings.focusDuration * 60,
       phase: "focus",
       sessionCount: 0,
+      activeTaskId: null,
     });
   },
 
@@ -94,6 +98,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
           : settings.breakDuration * 60;
     set({ phase, status: "idle", remaining });
   },
+
+  setActiveTask: (id: string | null) => set({ activeTaskId: id }),
 
   updateSettings: (partial: Partial<Settings>) => {
     const { settings, phase } = get();
