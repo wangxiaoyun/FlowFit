@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash, Check, Target } from "@phosphor-icons/react";
 import { useTaskStore } from "../store/taskStore";
+import { useTimerStore } from "../store/timerStore";
 
 /** 生成今日日期字符串 YYYY-MM-DD */
 function todayStr(): string {
@@ -28,6 +29,8 @@ function getLast7Days(): { date: string; label: string }[] {
  */
 export function TaskList() {
   const { tasks, addTask, removeTask, toggleComplete } = useTaskStore();
+  const activeTaskId = useTimerStore((s) => s.activeTaskId);
+  const setActiveTask = useTimerStore((s) => s.setActiveTask);
   const [input, setInput] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => todayStr());
 
@@ -44,6 +47,10 @@ export function TaskList() {
     if (!input.trim()) return;
     addTask(input);
     setInput("");
+  };
+
+  const handleActivate = (id: string) => {
+    setActiveTask(activeTaskId === id ? null : id);
   };
 
   return (
@@ -100,37 +107,45 @@ export function TaskList() {
 
       {/* 任务列表 */}
       <ul className="space-y-2">
-        {activeTasks.map((task) => (
-          <li
-            key={task.id}
-            className="group flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
-          >
-            <button
-              onClick={() => toggleComplete(task.id)}
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-neutral-300 hover:border-pomodoro-400 dark:border-neutral-500 dark:hover:border-pomodoro-400"
-              aria-label={`标记"${task.title}"为已完成`}
+        {activeTasks.map((task) => {
+          const isActive = task.id === activeTaskId;
+          return (
+            <li
+              key={task.id}
+              onClick={() => isToday && handleActivate(task.id)}
+              className={`group flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                isActive
+                  ? "border-l-[3px] border-l-pomodoro-500 border-pomodoro-300 bg-pomodoro-50 dark:border-pomodoro-600 dark:bg-pomodoro-500/10"
+                  : "border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800"
+              } ${isToday ? "cursor-pointer" : ""}`}
             >
-              {task.completed && <Check size={12} weight="bold" className="text-pomodoro-500" />}
-            </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleComplete(task.id); }}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-neutral-300 hover:border-pomodoro-400 dark:border-neutral-500 dark:hover:border-pomodoro-400"
+                aria-label={`标记"${task.title}"为已完成`}
+              >
+                {task.completed && <Check size={12} weight="bold" className="text-pomodoro-500" />}
+              </button>
 
-            <span className="flex-1 text-sm text-neutral-900 dark:text-white">
-              {task.title}
-            </span>
+              <span className="flex-1 text-sm text-neutral-900 dark:text-white">
+                {task.title}
+              </span>
 
-            <span className="flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
-              <Target size={14} />
-              {task.pomodoroCount}
-            </span>
+              <span className="flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
+                <Target size={14} />
+                {task.pomodoroCount}
+              </span>
 
-            <button
-              onClick={() => removeTask(task.id)}
-              className="opacity-0 transition-opacity group-hover:opacity-100"
-              aria-label={`删除"${task.title}"`}
-            >
-              <Trash size={16} className="text-neutral-400 hover:text-red-500 dark:text-neutral-500" />
-            </button>
-          </li>
-        ))}
+              <button
+                onClick={(e) => { e.stopPropagation(); removeTask(task.id); }}
+                className="opacity-0 transition-opacity group-hover:opacity-100"
+                aria-label={`删除"${task.title}"`}
+              >
+                <Trash size={16} className="text-neutral-400 hover:text-red-500 dark:text-neutral-500" />
+              </button>
+            </li>
+          );
+        })}
 
         {/* 已完成任务 */}
         {completedTasks.length > 0 && (
