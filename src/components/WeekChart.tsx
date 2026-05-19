@@ -13,9 +13,7 @@ function getWeekDays() {
   return days;
 }
 
-/**
- * 近 7 天番茄钟完成数柱状图，纯 CSS flex 实现，零依赖。
- */
+/** 近 7 天番茄钟热力格子，颜色深浅代表数量，数字居中显示。 */
 export function WeekChart() {
   const dailyStats = useTaskStore((s) => s.dailyStats);
   const days = getWeekDays();
@@ -31,39 +29,48 @@ export function WeekChart() {
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
         本周趋势
       </h2>
-      <div className="rounded-2xl border border-neutral-100 bg-white px-4 pb-3 pt-4 dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex h-20 items-end justify-between gap-1">
+      <div className="rounded-2xl border border-neutral-100 bg-white px-3 py-3 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex justify-between gap-1.5">
           {days.map(({ label, isToday }, i) => {
             const value = values[i];
-            const pct = value > 0 ? Math.max(8, (value / max) * 100) : 0;
+            const intensity = value / max;
+
+            // 根据强度和是否今天决定格子样式
+            let cellCls: string;
+            let numCls: string;
+            if (value === 0) {
+              cellCls = "bg-neutral-100 dark:bg-neutral-800";
+              numCls = "text-neutral-300 dark:text-neutral-600";
+            } else if (isToday) {
+              cellCls = "bg-pomodoro-500 dark:bg-pomodoro-400";
+              numCls = "text-white";
+            } else if (intensity >= 0.75) {
+              cellCls = "bg-pomodoro-400 dark:bg-pomodoro-600";
+              numCls = "text-white";
+            } else if (intensity >= 0.5) {
+              cellCls = "bg-pomodoro-300 dark:bg-pomodoro-700";
+              numCls = "text-pomodoro-900 dark:text-pomodoro-100";
+            } else if (intensity >= 0.25) {
+              cellCls = "bg-pomodoro-200 dark:bg-pomodoro-800";
+              numCls = "text-pomodoro-800 dark:text-pomodoro-200";
+            } else {
+              cellCls = "bg-pomodoro-100 dark:bg-pomodoro-900";
+              numCls = "text-pomodoro-700 dark:text-pomodoro-300";
+            }
 
             return (
               <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                {value > 0 && (
-                  <span
-                    className={`text-[10px] font-medium leading-none ${
-                      isToday ? "text-pomodoro-500" : "text-neutral-400 dark:text-neutral-500"
-                    }`}
-                  >
-                    {value}
+                <div
+                  className={`flex h-9 w-full items-center justify-center rounded-lg text-xs font-semibold transition-all ${cellCls}`}
+                >
+                  <span className={numCls}>
+                    {value > 0 ? value : "·"}
                   </span>
-                )}
-                <div className="flex w-full flex-1 items-end">
-                  <div
-                    className={`w-full rounded-sm transition-all duration-500 ${
-                      isToday
-                        ? "bg-pomodoro-500 dark:bg-pomodoro-400"
-                        : value > 0
-                          ? "bg-pomodoro-200 dark:bg-pomodoro-900"
-                          : "bg-neutral-100 dark:bg-neutral-800"
-                    }`}
-                    style={{ height: value > 0 ? `${pct}%` : "4px" }}
-                  />
                 </div>
                 <span
                   className={`text-[10px] leading-none ${
                     isToday
-                      ? "font-semibold text-pomodoro-500"
+                      ? "font-semibold text-pomodoro-500 dark:text-pomodoro-400"
                       : "text-neutral-400 dark:text-neutral-500"
                   }`}
                 >

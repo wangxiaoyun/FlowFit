@@ -12,6 +12,7 @@ interface MilestoneStore {
   removeMilestone: (id: string) => void;
   toggleCollapse: (id: string) => void;
   updateMilestoneTitle: (id: string, title: string) => void;
+  reorderMilestones: (fromIndex: number, toIndex: number) => void;
 
   addMilestoneTask: (milestoneId: string, title: string) => void;
   removeMilestoneTask: (milestoneId: string, taskId: string) => void;
@@ -72,6 +73,14 @@ export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
     );
     persist(milestones);
     set({ milestones });
+  },
+
+  reorderMilestones: (fromIndex: number, toIndex: number) => {
+    const arr = [...get().milestones];
+    const [item] = arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, item);
+    persist(arr);
+    set({ milestones: arr });
   },
 
   addMilestoneTask: (milestoneId: string, title: string) => {

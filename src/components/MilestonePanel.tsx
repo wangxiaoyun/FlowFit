@@ -7,12 +7,13 @@ import {
   CaretRight,
   Flag,
   ArrowRight,
+  DotsSixVertical,
 } from "@phosphor-icons/react";
 import { useMilestoneStore } from "../store/milestoneStore";
 import { useTaskStore } from "../store/taskStore";
 
 /** 单个里程碑卡片，含折叠/展开、子任务管理 */
-function MilestoneCard({ id }: { id: string }) {
+function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean }) {
   const { milestones, removeMilestone, toggleCollapse, addMilestoneTask, removeMilestoneTask, toggleMilestoneTask } =
     useMilestoneStore();
   const addTask = useTaskStore((s) => s.addTask);
@@ -51,9 +52,18 @@ function MilestoneCard({ id }: { id: string }) {
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800">
+    <div
+      className={`rounded-xl border border-neutral-200 bg-white transition-opacity dark:border-neutral-700 dark:bg-neutral-800 ${
+        isDragging ? "opacity-40" : "opacity-100"
+      }`}
+    >
       {/* 里程碑标题行 */}
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="flex items-center gap-2 px-3 py-3">
+        {/* 拖拽把手：hover 时从父级 group/milestone 控制显示 */}
+        <div className="cursor-grab opacity-0 transition-opacity group-hover/milestone:opacity-40 hover:!opacity-100 shrink-0 text-neutral-400 dark:text-neutral-500 active:cursor-grabbing">
+          <DotsSixVertical size={14} weight="bold" />
+        </div>
+
         <button
           onClick={() => toggleCollapse(id)}
           className="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
@@ -85,7 +95,7 @@ function MilestoneCard({ id }: { id: string }) {
 
         <button
           onClick={() => removeMilestone(id)}
-          className="shrink-0 text-neutral-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 dark:text-neutral-600"
+          className="shrink-0 text-neutral-300 opacity-0 transition-opacity hover:text-red-500 group-hover/milestone:opacity-100 dark:text-neutral-600"
           aria-label={`删除里程碑"${milestone.title}"`}
         >
           <Trash size={15} />
@@ -183,17 +193,48 @@ function MilestoneCard({ id }: { id: string }) {
   );
 }
 
-/** 项目阶段目标面板 */
+/** 项目阶段目标面板，支持拖拽排序 */
 export function MilestonePanel() {
-  const { milestones, addMilestone } = useMilestoneStore();
+  const { milestones, addMilestone, reorderMilestones } = useMilestoneStore();
   const [input, setInput] = useState("");
   const [adding, setAdding] = useState(false);
+
+  // 拖拽排序状态
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addMilestone(input);
     setInput("");
     setAdding(false);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // 必须设置 data，部分浏览器才允许 drop
+    e.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (index !== dragIndex) setOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragIndex !== null && dragIndex !== index) {
+      reorderMilestones(dragIndex, index);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setOverIndex(null);
   };
 
   return (
@@ -243,9 +284,21 @@ export function MilestonePanel() {
       )}
 
       <ul className="space-y-2">
-        {milestones.map((m) => (
-          <li key={m.id} className="group">
-            <MilestoneCard id={m.id} />
+        {milestones.map((m, i) => (
+          <li
+            key={m.id}
+            className="group/milestone relative"
+            draggable
+            onDragStart={(e) => handleDragStart(e, i)}
+            onDragOver={(e) => handleDragOver(e, i)}
+            onDrop={(e) => handleDrop(e, i)}
+            onDragEnd={handleDragEnd}
+          >
+            {/* 插入线：拖拽悬停时在目标卡片上方显示 */}
+            {overIndex === i && dragIndex !== i && (
+              <div className="pointer-events-none absolute -top-1 inset-x-0 z-10 h-0.5 rounded-full bg-pomodoro-500" />
+            )}
+            <MilestoneCard id={m.id} isDragging={dragIndex === i} />
           </li>
         ))}
       </ul>
