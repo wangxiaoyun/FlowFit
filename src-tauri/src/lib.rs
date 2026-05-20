@@ -125,11 +125,13 @@ pub fn run() {
 
             Ok(())
         })
-        // 点击关闭按钮时隐藏到托盘，不退出进程
+        // 仅主窗口关闭时隐藏到托盘，不退出进程；弹窗等子窗口允许正常关闭
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
-                api.prevent_close();
+                if window.label() == "main" {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
             }
         })
         .run(tauri::generate_context!())

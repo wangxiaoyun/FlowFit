@@ -56,6 +56,10 @@ export function useTimer() {
   // 用户完成或跳过引导卡后执行 completePhase 并重启计时器
   const finishKegel = useCallback(() => {
     completePhase();
+    // 清除可能残留的旧间隔，防止与 effect 47 cleanup 产生竞态导致多间隔并存
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+    }
     if (useTimerStore.getState().status === "running") {
       intervalRef.current = setInterval(() => tick(), 1000);
     }
@@ -87,11 +91,7 @@ export function useTimer() {
 
     // 专注结束 + 提肛开启：打开桌面右下角浮窗，不占用主页面
     if (phase === "focus" && settings.kegelEnabled) {
-      invoke("show_kegel_popup", {
-        reps: settings.kegelReps,
-        holdSeconds: settings.kegelHoldSeconds,
-      }).catch(() => {});
-
+      // 先处理通知和番茄记录（无论弹窗是否成功都要做）
       if (settings.soundEnabled) {
         playNotification(settings.volume);
         recordPomodoro();
@@ -107,6 +107,18 @@ export function useTimer() {
           `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟\n休息前先做提肛运动！`
         );
       }
+
+      invoke("show_kegel_popup", {
+        reps: settings.kegelReps,
+        holdSeconds: settings.kegelHoldSeconds,
+      }).catch((err) => {
+        // 弹窗失败兜底：直接进入休息阶段，防止计时器卡在 00:00
+        console.error("提肛弹窗打开失败，回退直接进入休息：", err);
+        completePhase();
+        if (useTimerStore.getState().status === "running") {
+          intervalRef.current = setInterval(() => tick(), 1000);
+        }
+      });
       // completePhase 由弹窗 kegel-done 事件触发（见上方 listen）
       return;
     }

@@ -22,7 +22,8 @@ export function useKegel(
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const ticksPerRep = holdSeconds + 1; // 每组总秒数（收缩 N 秒 + 放松 1 秒）
+  const restSeconds = 3; // 每组放松休息秒数
+  const ticksPerRep = holdSeconds + restSeconds;
   const totalTicks = reps * ticksPerRep;
 
   // 主计时 interval
@@ -50,7 +51,7 @@ export function useKegel(
   const currentRep = repIndex + 1;
   const tickInRep = clampedTick % ticksPerRep;
   const phase: "contract" | "relax" = tickInRep < holdSeconds ? "contract" : "relax";
-  const secondsLeft = phase === "contract" ? holdSeconds - tickInRep : 1;
+  const secondsLeft = phase === "contract" ? holdSeconds - tickInRep : restSeconds - (tickInRep - holdSeconds);
 
   return { currentRep, phase, secondsLeft, isComplete };
 }

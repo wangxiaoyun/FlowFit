@@ -54,7 +54,7 @@ export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProp
             {phase === "contract" ? "收缩" : "放松"}
           </span>
           <span className="text-neutral-400 dark:text-neutral-500">
-            {phase === "contract" ? `${secondsLeft}s` : "1s"}
+            {`${secondsLeft}s`}
           </span>
         </div>
 
