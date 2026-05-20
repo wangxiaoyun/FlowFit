@@ -85,14 +85,18 @@ function MilestoneCard({
         isDragging ? "opacity-40" : "opacity-100"
       }`}
     >
-      {/* 标题行：整行可拖拽（排除按钮区域） */}
+      {/* 标题行：整行可拖拽（排除按钮区域），hover 时背景 + 左侧竖线 + 把手图标同步显现 */}
       <div
-        className="flex cursor-grab items-center gap-2 px-3 py-3 active:cursor-grabbing"
+        className="relative flex cursor-grab items-center gap-2 rounded-t-xl px-3 py-3 transition-colors hover:bg-neutral-100 active:cursor-grabbing dark:hover:bg-white/8"
+        title="拖拽调整优先级"
         onPointerDown={onTitleBarPointerDown}
       >
-        {/* 拖拽把手图标提示，hover 时显示 */}
-        <div className="shrink-0 select-none text-neutral-300 opacity-0 transition-opacity group-hover/milestone:opacity-100 dark:text-neutral-600">
-          <DotsSixVertical size={14} weight="bold" />
+        {/* 左侧可拖拽提示竖线，hover 时显现 */}
+        <div className="absolute bottom-1 left-0 top-1 w-0.5 rounded-full bg-transparent transition-colors group-hover/milestone:bg-pomodoro-300 dark:group-hover/milestone:bg-pomodoro-700" />
+
+        {/* 把手图标：hover 时从隐藏变为清晰可见 */}
+        <div className="shrink-0 select-none text-neutral-500 opacity-0 transition-opacity group-hover/milestone:opacity-100 dark:text-neutral-400">
+          <DotsSixVertical size={15} weight="bold" />
         </div>
 
         <button
