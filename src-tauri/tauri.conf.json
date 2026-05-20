@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "FlowFit",
   "version": "1.2.0",
-  "identifier": "com.pomodoro.timer",
+  "identifier": "com.flowfit.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
