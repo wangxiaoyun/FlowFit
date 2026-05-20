@@ -91,7 +91,7 @@ export function Header() {
 function HelpDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
@@ -215,7 +215,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="flex w-full max-w-sm flex-col rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800" style={{ maxHeight: "88vh" }}>
@@ -559,7 +559,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
               </p>
             )}
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-              配置后可使用 AI 新闻精编（含摘要）和工作周报生成功能。
+              配置后可使用 AI 日报 / 周报自动生成功能。
             </p>
           </div>
         </div>
