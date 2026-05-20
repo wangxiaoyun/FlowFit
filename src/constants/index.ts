@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   kegelEnabled: true,
   kegelReps: 10,
   kegelHoldSeconds: 3,
+  deepseekApiKey: "",
 };
 
 export const STORAGE_KEYS = {

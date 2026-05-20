@@ -1,6 +1,6 @@
 [package]
 name = "flowfit"
-version = "1.3.0"
+version = "1.4.0"
 description = "FlowFit — 健康打工人生产力工具"
 authors = []
 license = ""

@@ -78,9 +78,10 @@ export default function App() {
 
       setLoaded(true);
 
-      // 异步加载新闻（不阻塞主界面渲染）
+      // 异步加载新闻（不阻塞主界面渲染），有 DeepSeek Key 时启用精编模式
       setNewsLoading(true);
-      const items = await fetchAINews();
+      const apiKey = useTimerStore.getState().settings.deepseekApiKey;
+      const items = await fetchAINews(apiKey || undefined);
       setNewsItems(items);
       setNewsLoading(false);
 

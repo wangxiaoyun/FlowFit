@@ -13,19 +13,27 @@ import {
   Question,
   FolderOpen,
   HardDrive,
+  NotePencil,
+  Key,
+  CheckCircle,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import { useTheme } from "../hooks/useTheme";
 import { useTimerStore } from "../store/timerStore";
 import type { Settings } from "../types";
 import { isTauri, selectDirectory } from "../utils/fileStorage";
+import { testDeepSeekKey } from "../utils/deepseek";
+import { WeeklyReportModal } from "./WeeklyReportModal";
 
 /**
- * 顶部导航栏：应用标题、主题切换、使用说明、设置入口。
+ * 顶部导航栏：应用标题、主题切换、使用说明、设置入口、周报入口。
  */
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const hasApiKey = !!useTimerStore((s) => s.settings.deepseekApiKey);
 
   return (
     <>
@@ -44,6 +52,17 @@ export function Header() {
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          {/* 周报按钮：配置了 API Key 才显示 */}
+          {hasApiKey && (
+            <button
+              onClick={() => setShowReport(true)}
+              className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              aria-label="生成工作周报"
+              title="AI 工作周报"
+            >
+              <NotePencil size={18} />
+            </button>
+          )}
           <button
             onClick={() => setShowHelp(true)}
             className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
@@ -63,6 +82,7 @@ export function Header() {
 
       {showHelp && <HelpDialog onClose={() => setShowHelp(false)} />}
       {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+      {showReport && <WeeklyReportModal onClose={() => setShowReport(false)} />}
     </>
   );
 }
@@ -155,6 +175,11 @@ function HelpDialog({ onClose }: { onClose: () => void }) {
 function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { settings, updateSettings } = useTimerStore();
   const [pickingDir, setPickingDir] = useState(false);
+  const [keyInput, setKeyInput] = useState(settings.deepseekApiKey);
+  const [verifying, setVerifying] = useState(false);
+  const [keyValid, setKeyValid] = useState<boolean | null>(
+    settings.deepseekApiKey ? true : null
+  );
 
   const handleChange = useCallback(
     (partial: Partial<Settings>) => {
@@ -162,6 +187,24 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
     },
     [updateSettings],
   );
+
+  const handleVerifyKey = async () => {
+    const trimmed = keyInput.trim();
+    if (!trimmed) return;
+    setVerifying(true);
+    setKeyValid(null);
+    const ok = await testDeepSeekKey(trimmed);
+    setKeyValid(ok);
+    if (ok) handleChange({ deepseekApiKey: trimmed });
+    setVerifying(false);
+  };
+
+  const handleKeyBlur = () => {
+    // 输入框失焦时如果内容变化则重置验证状态
+    if (keyInput.trim() !== settings.deepseekApiKey) {
+      setKeyValid(null);
+    }
+  };
 
   const handleSelectDataPath = async () => {
     setPickingDir(true);
@@ -473,6 +516,51 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
                 </div>
               </>
             )}
+          </div>
+
+          {/* DeepSeek API Key */}
+          <div className="space-y-2">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <Key size={14} />
+              DeepSeek API Key
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={keyInput}
+                onChange={(e) => { setKeyInput(e.target.value); setKeyValid(null); }}
+                onBlur={handleKeyBlur}
+                placeholder="sk-..."
+                className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-neutral-500"
+              />
+              <button
+                onClick={handleVerifyKey}
+                disabled={verifying || !keyInput.trim()}
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+              >
+                {verifying ? (
+                  <span className="animate-pulse">验证中…</span>
+                ) : (
+                  "验证"
+                )}
+              </button>
+            </div>
+            {/* 验证状态提示 */}
+            {keyValid === true && (
+              <p className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                <CheckCircle size={13} weight="fill" />
+                API Key 有效，已保存
+              </p>
+            )}
+            {keyValid === false && (
+              <p className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400">
+                <WarningCircle size={13} weight="fill" />
+                验证失败，请检查 Key 是否正确
+              </p>
+            )}
+            <p className="text-xs text-neutral-400 dark:text-neutral-500">
+              配置后可使用 AI 新闻精编（含摘要）和工作周报生成功能。
+            </p>
           </div>
         </div>
         </div> {/* overflow-y-auto 滚动区结束 */}

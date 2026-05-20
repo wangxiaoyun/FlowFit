@@ -1,21 +1,27 @@
 /**
  * AI 新闻获取、翻译与缓存模块。
  * 数据源：Hacker News Algolia API（免费无 Key）
- * 翻译：Google Translate 非官方接口（无需 Key，失败时保留英文）
+ * 翻译/精选：
+ *   - 配置了 DeepSeek API Key → DeepSeek 翻译+写中文摘要（精编版）
+ *   - 未配置 → Google Translate 非官方接口（基础翻译版）
  */
+
+import { callDeepSeek } from "./deepseek";
 
 export interface NewsItem {
   id: string;
-  title: string;     // 中文翻译标题（翻译失败时为英文）
+  title: string;     // 中文标题（翻译/精编后）
   titleEn: string;   // 英文原标题
+  summary?: string;  // 一句话中文摘要（DeepSeek 模式才有）
   url: string;
-  source: string;    // 域名，如 techcrunch.com
+  source: string;    // 域名
   publishedAt: string;
   points: number;
 }
 
 interface NewsCache {
   date: string;
+  mode: "deepseek" | "google" | "raw"; // 记录生成模式，Key 变化时强制刷新
   items: NewsItem[];
 }
 
@@ -35,11 +41,10 @@ function extractDomain(url: string): string {
   }
 }
 
-/** 用 Google Translate 非官方接口批量翻译，titles 换行分隔，一次请求 */
+/** Google Translate 非官方接口批量翻译（换行合并，一次请求） */
 async function translateTitles(titles: string[]): Promise<string[]> {
   if (titles.length === 0) return [];
-  const joined = titles.join("\n");
-  const encoded = encodeURIComponent(joined);
+  const encoded = encodeURIComponent(titles.join("\n"));
   const url =
     `https://translate.googleapis.com/translate_a/single` +
     `?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encoded}`;
@@ -47,92 +52,150 @@ async function translateTitles(titles: string[]): Promise<string[]> {
     const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!resp.ok) throw new Error("translate failed");
     const json = await resp.json();
-    // 返回结构：[[["译文", "原文", null, null, 1], ...], ...]
-    // 合并所有分段文本
     const translated: string = (json[0] as Array<[string]>)
       .map((seg) => seg[0])
       .join("");
     const lines = translated.split("\n");
-    // 按行数对应回 titles（Google 可能合并短行）
     return titles.map((_, i) => lines[i]?.trim() || titles[i]);
   } catch {
-    // 翻译失败时返回原始英文
-    return titles;
+    return titles; // fallback 英文
   }
 }
 
-/** 从 HN Algolia API 获取 AI 相关热门故事 */
-async function fetchFromHN(): Promise<NewsItem[]> {
+/** DeepSeek 精编：翻译+写一句话摘要，返回 { title, summary }[] */
+async function enrichWithDeepSeek(
+  apiKey: string,
+  hits: Array<{ title: string; url: string }>
+): Promise<Array<{ title: string; summary: string }>> {
+  const numbered = hits
+    .map((h, i) => `${i + 1}. ${h.title}`)
+    .join("\n");
+
+  const prompt = `你是AI科技新闻编辑。以下是从Hacker News获取的今日AI相关英文新闻标题，请：
+1. 将每条标题翻译为准确、简洁的中文
+2. 为每条新闻写一句话中文摘要（15-35字，说明核心内容）
+
+严格以JSON数组格式输出，不要其他文字：
+[{"title":"中文标题","summary":"一句话摘要"},...]
+
+新闻列表：
+${numbered}`;
+
+  const raw = await callDeepSeek(
+    apiKey,
+    [{ role: "user", content: prompt }],
+    { timeoutMs: 25000 }
+  );
+
+  // 提取 JSON（防止模型包裹 markdown 代码块）
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error("Invalid JSON from DeepSeek");
+  const parsed = JSON.parse(match[0]) as Array<{ title: string; summary: string }>;
+  return hits.map((_, i) => ({
+    title: parsed[i]?.title ?? hits[i].title,
+    summary: parsed[i]?.summary ?? "",
+  }));
+}
+
+/** 从 HN Algolia API 获取 AI 相关原始故事 */
+async function fetchRawFromHN(): Promise<Array<{ id: string; title: string; url: string; publishedAt: string; points: number }>> {
   const resp = await fetch(
     "https://hn.algolia.com/api/v1/search" +
       "?query=artificial+intelligence+LLM+GPT" +
-      "&tags=story&hitsPerPage=12&page=0",
+      "&tags=story&hitsPerPage=15&page=0",
     { signal: AbortSignal.timeout(10000) }
   );
   if (!resp.ok) throw new Error("HN fetch failed");
   const data = await resp.json();
 
-  // 过滤掉没有标题或 URL 的条目，取前10条
-  const hits = (data.hits as Record<string, unknown>[])
+  return (data.hits as Record<string, unknown>[])
     .filter((h) => h.title && (h.url || h.objectID))
-    .slice(0, 10);
-
-  const englishTitles = hits.map((h) => String(h.title));
-  const chineseTitles = await translateTitles(englishTitles);
-
-  return hits.map((h, i) => {
-    const hnUrl = `https://news.ycombinator.com/item?id=${h.objectID}`;
-    const url = typeof h.url === "string" ? h.url : hnUrl;
-    return {
-      id: String(h.objectID),
-      title: chineseTitles[i] || englishTitles[i],
-      titleEn: englishTitles[i],
-      url,
-      source: extractDomain(url),
-      publishedAt: String(h.created_at ?? new Date().toISOString()),
-      points: typeof h.points === "number" ? h.points : 0,
-    };
-  });
+    .slice(0, 10)
+    .map((h) => {
+      const hnUrl = `https://news.ycombinator.com/item?id=${h.objectID}`;
+      return {
+        id: String(h.objectID),
+        title: String(h.title),
+        url: typeof h.url === "string" ? h.url : hnUrl,
+        publishedAt: String(h.created_at ?? new Date().toISOString()),
+        points: typeof h.points === "number" ? h.points : 0,
+      };
+    });
 }
 
 /**
  * 获取今日 AI 新闻。
- * 当天有缓存则直接返回；否则从 HN 拉取 + 翻译并写入缓存。
- * 网络失败时返回上次缓存（如有），再失败则返回空数组。
+ * deepseekApiKey 有值时：DeepSeek 精编（含摘要）；否则 Google 翻译基础版。
+ * 当天同模式缓存有效，切换 Key 或跨天自动刷新。
  */
-export async function fetchAINews(): Promise<NewsItem[]> {
+export async function fetchAINews(deepseekApiKey?: string): Promise<NewsItem[]> {
   const today = todayStr();
+  const mode: NewsCache["mode"] = deepseekApiKey ? "deepseek" : "google";
 
-  // 读取缓存
+  // 读缓存（同天且同模式才命中）
   let cached: NewsCache | null = null;
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) cached = JSON.parse(raw) as NewsCache;
   } catch {}
-
-  if (cached?.date === today && cached.items.length > 0) {
+  if (cached?.date === today && cached.mode === mode && cached.items.length > 0) {
     return cached.items;
   }
 
-  // 拉取新数据
+  // 拉取原始数据
+  let raw: Awaited<ReturnType<typeof fetchRawFromHN>>;
   try {
-    const items = await fetchFromHN();
-    if (items.length > 0) {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, items }));
-      return items;
-    }
-  } catch {}
+    raw = await fetchRawFromHN();
+  } catch {
+    return cached?.items ?? [];
+  }
+  if (raw.length === 0) return cached?.items ?? [];
 
-  // 网络失败：返回上次旧缓存
-  return cached?.items ?? [];
+  let items: NewsItem[];
+
+  if (deepseekApiKey) {
+    // DeepSeek 精编模式
+    try {
+      const enriched = await enrichWithDeepSeek(deepseekApiKey, raw);
+      items = raw.map((h, i) => ({
+        id: h.id,
+        title: enriched[i].title || h.title,
+        titleEn: h.title,
+        summary: enriched[i].summary,
+        url: h.url,
+        source: extractDomain(h.url),
+        publishedAt: h.publishedAt,
+        points: h.points,
+      }));
+    } catch {
+      // DeepSeek 失败降级为 Google 翻译
+      const translated = await translateTitles(raw.map((h) => h.title));
+      items = raw.map((h, i) => ({
+        ...h,
+        title: translated[i] || h.title,
+        titleEn: h.title,
+        source: extractDomain(h.url),
+      }));
+    }
+  } else {
+    // Google 翻译基础模式
+    const translated = await translateTitles(raw.map((h) => h.title));
+    items = raw.map((h, i) => ({
+      ...h,
+      title: translated[i] || h.title,
+      titleEn: h.title,
+      source: extractDomain(h.url),
+    }));
+  }
+
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, mode, items }));
+  return items;
 }
 
-/** 今日是否已点击"已读" */
 export function isTodayRead(): boolean {
   return localStorage.getItem(READ_KEY) === todayStr();
 }
 
-/** 标记今日已读（今天不再自动弹出） */
 export function markTodayRead(): void {
   localStorage.setItem(READ_KEY, todayStr());
 }

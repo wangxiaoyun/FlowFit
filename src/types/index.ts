@@ -39,6 +39,8 @@ export interface Settings {
   kegelEnabled: boolean;
   kegelReps: number;        // 每次引导的组数
   kegelHoldSeconds: number; // 每组收缩保持秒数
+  /** DeepSeek API Key（空 = 未配置，降级为 Google 翻译） */
+  deepseekApiKey: string;
 }
 
 /** Timer store state */
