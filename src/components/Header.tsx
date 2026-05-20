@@ -31,9 +31,9 @@ export function Header() {
     <>
       <header className="flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
-          <Timer size={22} weight="duotone" className="text-pomodoro-500" />
+          <Timer size={22} weight="duotone" className="text-blue-500" />
           <span className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-white">
-            番茄钟
+            FlowFit
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -403,6 +403,73 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
               />
               自动开始专注
             </label>
+          </div>
+
+          {/* 提肛提醒 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 dark:border-neutral-600 dark:bg-neutral-700/50">
+              <span className="text-sm text-neutral-700 dark:text-neutral-200">
+                💪 专注结束时提肛提醒
+              </span>
+              <button
+                onClick={() => handleChange({ kegelEnabled: !settings.kegelEnabled })}
+                className={`relative h-5 w-9 rounded-full transition-colors ${
+                  settings.kegelEnabled
+                    ? "bg-blue-500"
+                    : "bg-neutral-300 dark:bg-neutral-600"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    settings.kegelEnabled ? "translate-x-4" : ""
+                  }`}
+                />
+              </button>
+            </div>
+
+            {settings.kegelEnabled && (
+              <>
+                <div>
+                  <label className="mb-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                    提肛次数（组）
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={settings.kegelReps}
+                    onChange={(e) =>
+                      handleChange({ kegelReps: Math.min(30, Math.max(1, Number(e.target.value))) })
+                    }
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                    建议 10-20 组，新手从 10 组开始
+                  </p>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                    每组保持秒数
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={settings.kegelHoldSeconds}
+                    onChange={(e) =>
+                      handleChange({
+                        kegelHoldSeconds: Math.min(10, Math.max(1, Number(e.target.value))),
+                      })
+                    }
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white"
+                  />
+                  <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                    建议 3-5 秒，最大 10 秒
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
