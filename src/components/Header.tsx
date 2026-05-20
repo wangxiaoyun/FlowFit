@@ -13,7 +13,7 @@ import {
   Question,
   FolderOpen,
   HardDrive,
-  NotePencil,
+  BookOpen,
   Key,
   CheckCircle,
   WarningCircle,
@@ -23,7 +23,7 @@ import { useTimerStore } from "../store/timerStore";
 import type { Settings } from "../types";
 import { isTauri, selectDirectory } from "../utils/fileStorage";
 import { testDeepSeekKey } from "../utils/deepseek";
-import { WeeklyReportModal } from "./WeeklyReportModal";
+import { ReportPanel } from "./ReportPanel";
 
 /**
  * 顶部导航栏：应用标题、主题切换、使用说明、设置入口、周报入口。
@@ -57,10 +57,10 @@ export function Header() {
             <button
               onClick={() => setShowReport(true)}
               className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              aria-label="生成工作周报"
-              title="AI 工作周报"
+              aria-label="日报 / 周报管理"
+              title="日报 / 周报管理"
             >
-              <NotePencil size={18} />
+              <BookOpen size={18} />
             </button>
           )}
           <button
@@ -82,7 +82,7 @@ export function Header() {
 
       {showHelp && <HelpDialog onClose={() => setShowHelp(false)} />}
       {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
-      {showReport && <WeeklyReportModal onClose={() => setShowReport(false)} />}
+      {showReport && <ReportPanel onClose={() => setShowReport(false)} />}
     </>
   );
 }

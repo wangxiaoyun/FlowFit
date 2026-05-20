@@ -27,6 +27,7 @@ export const STORAGE_KEYS = {
   CONSECUTIVE: "pomodoro-consecutive",
   LAST_DATE: "pomodoro-last-date",
   MILESTONES: "pomodoro-milestones",
+  REPORTS: "pomodoro-reports",
 } as const;
 
 export const PHASE_COLORS = {

@@ -58,6 +58,31 @@ export interface TaskState {
   dailyStats: DailyStats[];
 }
 
+/** Raw data snapshot stored with each report (for future WBS generation) */
+export interface ReportRawData {
+  tasks: Array<{
+    title: string;
+    completed: boolean;
+    pomodoroCount: number;
+    date: string;
+  }>;
+  totalPomodoros: number;
+  activeDays?: number;
+  milestones?: Array<{ title: string; doneCount: number; totalCount: number }>;
+}
+
+/** A generated daily or weekly report */
+export interface Report {
+  id: string;
+  type: "daily" | "weekly";
+  /** 日报: "2026-05-20"；周报: "2026-05-18~2026-05-24" */
+  period: string;
+  content: string;
+  rawData: ReportRawData;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** A single task within a milestone */
 export interface MilestoneTask {
   id: string;
