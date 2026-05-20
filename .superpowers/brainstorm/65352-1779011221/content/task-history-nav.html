@@ -1,0 +1,73 @@
+<h2>近一周任务查看 — 导航方式</h2>
+<p class="subtitle">任务列表顶部增加历史切换，哪种方式更顺手？</p>
+
+<div class="cards">
+
+  <!-- Option A: 横向日期 Tabs -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f8f8;border-radius:10px;padding:16px;font-family:system-ui">
+        <div style="font-size:11px;font-weight:600;color:#888;letter-spacing:.1em;margin-bottom:10px">任务</div>
+        <!-- Date tabs strip -->
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px">
+          <div style="background:#ef4444;color:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;white-space:nowrap">今天</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">昨天</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">5/15</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">5/14</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">5/13</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">5/12</div>
+          <div style="background:#f0f0f0;color:#555;border-radius:20px;padding:4px 12px;font-size:12px;white-space:nowrap">5/11</div>
+        </div>
+        <!-- 添加输入 -->
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:8px 12px;font-size:12px;color:#aaa">添加任务...</div>
+          <div style="background:#ef4444;color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600">添加</div>
+        </div>
+        <!-- 任务列表 -->
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:12px;color:#333;margin-bottom:6px">写周报</div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:12px;color:#333;margin-bottom:6px">整理代码</div>
+        <div style="background:#f6f6f6;border:1px solid #f0f0f0;border-radius:10px;padding:10px 12px;font-size:12px;color:#999;text-decoration:line-through">已完成 · 阅读文档</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A · 日期胶囊 Tab</h3>
+      <p>7 个日期横向排列，点击切换，今天高亮；非今天仅查看，隐藏添加框</p>
+    </div>
+  </div>
+
+  <!-- Option B: 折叠式日期分组 -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f8f8;border-radius:10px;padding:16px;font-family:system-ui">
+        <div style="font-size:11px;font-weight:600;color:#888;letter-spacing:.1em;margin-bottom:10px">任务</div>
+        <!-- 添加输入 -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <div style="flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:8px 12px;font-size:12px;color:#aaa">添加任务...</div>
+          <div style="background:#ef4444;color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600">添加</div>
+        </div>
+        <!-- 今天 section -->
+        <div style="font-size:11px;color:#ef4444;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span>今天</span><span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px">2</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:12px;color:#333;margin-bottom:6px">写周报</div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:12px;color:#333;margin-bottom:10px">整理代码</div>
+        <!-- 昨天 section 折叠 -->
+        <div style="font-size:11px;color:#aaa;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:pointer">
+          <span>▶ 昨天</span><span style="background:#e0e0e0;color:#888;border-radius:10px;padding:1px 7px;font-size:10px">3</span>
+        </div>
+        <div style="font-size:11px;color:#aaa;font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>▶ 5/15</span><span style="background:#e0e0e0;color:#888;border-radius:10px;padding:1px 7px;font-size:10px">1</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B · 折叠分组</h3>
+      <p>所有任务按日期分组，今天展开、历史折叠，点击展开查看；一屏可看所有日期</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:8px">
+  <p class="subtitle">💡 我推荐 <strong>方案 A</strong>——日期 Tab 切换界面最干净，添加/查看职责清晰；方案 B 的好处是不用切换视图，但任务多时容易杂乱。</p>
+</div>

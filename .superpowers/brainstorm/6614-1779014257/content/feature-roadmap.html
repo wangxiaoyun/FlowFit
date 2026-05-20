@@ -1,0 +1,58 @@
+<h2>市场调研 — 迭代功能优先级</h2>
+<p class="subtitle">对比 Forest、潮汐、番茄ToDo、Pomodomate 等主流应用，提炼出最有价值的缺失功能。请选出你想在下一版本实现的功能（可多选）。</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="long-break" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>🔁 长休息支持</h3>
+      <p>每完成 N 个番茄钟自动触发长休息（默认 15 分钟）。设置里的 longBreakInterval / longBreakDuration 已有字段但逻辑未接入，补全即可。<br><span style="color:#22c55e;font-size:11px">✦ 几乎所有主流应用标配，实现成本低</span></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="streak" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>🔥 连续天数 Streak</h3>
+      <p>统计连续几天完成过番茄钟，并在统计面板展示最长 Streak 和当前 Streak。Reclaim、Athenify、Forest 均以此为核心留存机制。<br><span style="color:#22c55e;font-size:11px">✦ 最强留存动力，存储成本极低</span></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ambient" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>🎵 白噪音 / 环境音</h3>
+      <p>内置雨声、咖啡馆、白噪音等 3–5 种专注音效，用 Web Audio API 程序生成，无需外部资源。潮汐（Tide）以此为核心卖点，番茄 ToDo Pro 也提供白噪音。<br><span style="color:#22c55e;font-size:11px">✦ 差异化亮点，纯本地无网络依赖</span></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="chart" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>📊 周统计图表</h3>
+      <p>在统计面板展示近 7 天每日番茄数的柱状图，一眼看出本周生产力趋势。Athenify、Super Productivity、番茄·人生均提供周/月报表。<br><span style="color:#22c55e;font-size:11px">✦ 纯 SVG/CSS 实现，零依赖</span></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="daily-goal" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>🎯 每日番茄目标</h3>
+      <p>设置今日目标番茄数（默认 8 个），统计面板显示完成进度条和百分比。Streak 判断也可以基于是否达成每日目标。<br><span style="color:#22c55e;font-size:11px">✦ 与 Streak 联动，强化目标感</span></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="tray" onclick="toggleSelect(this)">
+    <div class="letter">F</div>
+    <div class="content">
+      <h3>🖥️ 系统托盘（桌面版专属）</h3>
+      <p>Tauri 原生功能：关闭窗口时最小化到系统托盘，托盘图标显示剩余时间，右键菜单可开始/暂停/退出。纯桌面端差异化优势。<br><span style="color:#22c55e;font-size:11px">✦ 桌面版独有，Tauri 官方 API 支持</span></p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:12px">
+  <p class="subtitle">💡 我推荐优先选 <strong>A + B + D</strong>（长休息 + Streak + 图表），三者合力构成完整的"激励闭环"，且实现成本都较低。C（白噪音）差异化明显但工作量稍大。F（托盘）是桌面版专属亮点，值得一做。</p>
+</div>

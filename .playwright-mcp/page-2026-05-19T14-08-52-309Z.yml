@@ -1,0 +1,97 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - img [ref=e7]
+      - generic [ref=e10]: 番茄钟
+    - generic [ref=e11]:
+      - button "切换到深色主题" [ref=e12]:
+        - img [ref=e13]
+      - button "使用说明" [ref=e15]:
+        - img [ref=e16]
+      - button "打开设置" [ref=e18]:
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - heading "项目目标" [level=2] [ref=e25]:
+          - img [ref=e26]
+          - text: 项目目标
+        - button "添加里程碑" [ref=e28]:
+          - img [ref=e29]
+          - text: 添加
+      - paragraph [ref=e31]: 添加阶段目标，把握大方向
+      - list
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e38]: 专注 — 准备就绪
+          - generic [ref=e39]: 本轮 0/4，每 4 个长休息
+        - generic [ref=e40]:
+          - img [ref=e41]
+          - generic [ref=e46]: 25:00
+        - generic [ref=e47]:
+          - button "开始" [ref=e48]:
+            - img [ref=e49]
+            - text: 开始
+          - button "重置计时器" [ref=e51]:
+            - img [ref=e52]
+      - generic [ref=e55]:
+        - heading "今日" [level=2] [ref=e56]
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - img [ref=e59]
+            - generic [ref=e62]: "0"
+            - generic [ref=e63]: 今日番茄
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e68]: "0"
+            - generic [ref=e69]: 连续番茄
+          - generic [ref=e70]:
+            - img [ref=e71]
+            - generic [ref=e74]: "0"
+            - generic [ref=e75]: 完成任务
+          - generic [ref=e76]:
+            - img [ref=e77]
+            - generic [ref=e80]: "0"
+            - generic [ref=e81]: 连续天数
+      - generic [ref=e83]:
+        - heading "本周趋势" [level=2] [ref=e84]
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - generic [ref=e89]: ·
+            - generic [ref=e90]: 三
+          - generic [ref=e91]:
+            - generic [ref=e93]: ·
+            - generic [ref=e94]: 四
+          - generic [ref=e95]:
+            - generic [ref=e97]: ·
+            - generic [ref=e98]: 五
+          - generic [ref=e99]:
+            - generic [ref=e101]: ·
+            - generic [ref=e102]: 六
+          - generic [ref=e103]:
+            - generic [ref=e105]: ·
+            - generic [ref=e106]: 日
+          - generic [ref=e107]:
+            - generic [ref=e109]: ·
+            - generic [ref=e110]: 一
+          - generic [ref=e111]:
+            - generic [ref=e113]: ·
+            - generic [ref=e114]: 今
+    - generic [ref=e117]:
+      - heading "任务" [level=2] [ref=e118]
+      - generic [ref=e119]:
+        - button "今天" [ref=e120]
+        - button "昨天" [ref=e121]
+        - button "5/17" [ref=e122]
+        - button "5/16" [ref=e123]
+        - button "5/15" [ref=e124]
+        - button "5/14" [ref=e125]
+        - button "5/13" [ref=e126]
+      - generic [ref=e127]:
+        - textbox "添加任务..." [ref=e128]
+        - button "添加" [disabled] [ref=e129]:
+          - img [ref=e130]
+          - text: 添加
+      - paragraph [ref=e132]: 暂无任务，在上方输入后点击添加
+      - list

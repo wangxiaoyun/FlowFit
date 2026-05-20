@@ -1,0 +1,103 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - img [ref=e7]
+      - generic [ref=e10]: 番茄钟
+    - generic [ref=e11]:
+      - button "切换到深色主题" [ref=e12]:
+        - img [ref=e13]
+      - button "使用说明" [ref=e15]:
+        - img [ref=e16]
+      - button "打开设置" [ref=e18]:
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e27]: 专注 — 准备就绪
+          - generic [ref=e28]: 本轮 0/4，每 4 个长休息
+        - generic [ref=e29]:
+          - img [ref=e30]
+          - generic [ref=e35]: 25:00
+        - generic [ref=e36]:
+          - button "开始" [ref=e37]:
+            - img [ref=e38]
+            - text: 开始
+          - button "重置计时器" [ref=e40]:
+            - img [ref=e41]
+      - generic [ref=e44]:
+        - heading "今日" [level=2] [ref=e45]
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - img [ref=e48]
+            - generic [ref=e51]: "0"
+            - generic [ref=e52]: 今日番茄
+          - generic [ref=e53]:
+            - img [ref=e54]
+            - generic [ref=e57]: "0"
+            - generic [ref=e58]: 连续番茄
+          - generic [ref=e59]:
+            - img [ref=e60]
+            - generic [ref=e63]: "0"
+            - generic [ref=e64]: 完成任务
+          - generic [ref=e65]:
+            - img [ref=e66]
+            - generic [ref=e69]: "0"
+            - generic [ref=e70]: 连续天数
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - heading "项目目标" [level=2] [ref=e74]:
+            - img [ref=e75]
+            - text: 项目目标
+          - button "添加里程碑" [ref=e77]:
+            - img [ref=e78]
+            - text: 添加
+        - list [ref=e135]:
+          - listitem [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - button "折叠" [ref=e139]:
+                  - img [ref=e140]
+                - generic [ref=e142]: v1.0 功能完整上线
+                - generic [ref=e152]: 0/1
+                - button "删除里程碑\"v1.0 功能完整上线\"" [ref=e143]:
+                  - img [ref=e144]
+              - generic [ref=e146]:
+                - list [ref=e154]:
+                  - listitem [ref=e155]:
+                    - button "标记完成" [ref=e156]
+                    - generic [ref=e157]: 完成番茄钟核心计时功能
+                    - button "删除\"完成番茄钟核心计时功能\"" [ref=e158]:
+                      - img [ref=e159]
+                - generic [ref=e147]:
+                  - textbox "添加子任务..." [active] [ref=e148]
+                  - button "添加子任务" [disabled] [ref=e149]:
+                    - img [ref=e150]
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - heading "任务" [level=2] [ref=e84]
+        - generic [ref=e85]:
+          - button "今天" [ref=e86]
+          - button "昨天" [ref=e87]
+          - button "5/15" [ref=e88]
+          - button "5/14" [ref=e89]
+          - button "5/13" [ref=e90]
+          - button "5/12" [ref=e91]
+          - button "5/11" [ref=e92]
+        - generic [ref=e93]:
+          - textbox "添加任务..." [ref=e94]
+          - button "添加" [disabled] [ref=e95]:
+            - img [ref=e96]
+            - text: 添加
+        - paragraph [ref=e98]: 暂无任务，在上方输入后点击添加
+        - list
+      - generic [ref=e100]:
+        - heading "本周趋势" [level=2] [ref=e101]
+        - generic [ref=e103]:
+          - generic [ref=e107]: 一
+          - generic [ref=e111]: 二
+          - generic [ref=e115]: 三
+          - generic [ref=e119]: 四
+          - generic [ref=e123]: 五
+          - generic [ref=e127]: 六
+          - generic [ref=e131]: 今
