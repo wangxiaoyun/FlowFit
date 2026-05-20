@@ -175,7 +175,7 @@ function HelpDialog({ onClose }: { onClose: () => void }) {
 function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { settings, updateSettings } = useTimerStore();
   const [pickingDir, setPickingDir] = useState(false);
-  const [keyInput, setKeyInput] = useState(settings.deepseekApiKey);
+  const [keyInput, setKeyInput] = useState(settings.deepseekApiKey ?? "");
   const [verifying, setVerifying] = useState(false);
   const [keyValid, setKeyValid] = useState<boolean | null>(
     settings.deepseekApiKey ? true : null

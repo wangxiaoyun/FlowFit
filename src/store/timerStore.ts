@@ -30,7 +30,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   remaining: DEFAULT_SETTINGS.focusDuration * 60,
   currentPomodoro: loadFromStorage("pomodoro-consecutive", 0),
   sessionCount: 0,
-  settings: loadFromStorage("pomodoro-settings", DEFAULT_SETTINGS),
+  // 合并 DEFAULT_SETTINGS 确保新增字段在旧版 localStorage 数据中也存在
+  settings: { ...DEFAULT_SETTINGS, ...loadFromStorage<Partial<Settings>>("pomodoro-settings", {}) },
   activeTaskId: null,
 
   start: () => set({ status: "running" }),
