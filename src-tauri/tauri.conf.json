@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "番茄钟",
-  "version": "1.1.1",
+  "productName": "FlowFit",
+  "version": "1.2.0",
   "identifier": "com.pomodoro.timer",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "番茄钟",
+        "title": "FlowFit",
         "width": 500,
         "height": 820,
         "minWidth": 420,
