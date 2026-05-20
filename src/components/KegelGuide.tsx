@@ -20,7 +20,7 @@ interface KegelGuideProps {
  * 完成全部组数后自动调用 onDone；跳过按钮也调用 onDone（效果一致）。
  */
 export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProps) {
-  const { currentRep, phase, secondsLeft, isComplete } = useKegel(reps, holdSeconds, onDone);
+  const { currentRep, phase, secondsLeft } = useKegel(reps, holdSeconds, onDone);
 
   const tip = HEALTH_TIPS[(currentRep - 1) % HEALTH_TIPS.length];
   const showDots = reps <= 15;
