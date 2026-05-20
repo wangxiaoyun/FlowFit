@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Plus,
   Trash,
@@ -13,13 +13,20 @@ import { useMilestoneStore } from "../store/milestoneStore";
 import { useTaskStore } from "../store/taskStore";
 
 /** 单个里程碑卡片，含折叠/展开、子任务管理 */
-function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean }) {
+function MilestoneCard({
+  id,
+  isDragging,
+  onHandlePointerDown,
+}: {
+  id: string;
+  isDragging?: boolean;
+  onHandlePointerDown?: (e: React.PointerEvent) => void;
+}) {
   const { milestones, removeMilestone, toggleCollapse, addMilestoneTask, removeMilestoneTask, toggleMilestoneTask } =
     useMilestoneStore();
   const addTask = useTaskStore((s) => s.addTask);
   const milestone = milestones.find((m) => m.id === id);
   const [taskInput, setTaskInput] = useState("");
-  // 记录刚刚点击"加入任务"的子任务 id，用于短暂视觉反馈
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   if (!milestone) return null;
@@ -33,13 +40,11 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
     setTaskInput("");
   };
 
-  /** 将子任务标题快速添加到今日番茄任务 */
   const handleAddToPomodoro = (taskId: string, title: string) => {
     addTask(title);
     setAddedIds((prev) => {
       const next = new Set(prev);
       next.add(taskId);
-      // 1.5 秒后移除反馈状态
       setTimeout(() => {
         setAddedIds((s) => {
           const ns = new Set(s);
@@ -59,8 +64,11 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
     >
       {/* 里程碑标题行 */}
       <div className="flex items-center gap-2 px-3 py-3">
-        {/* 拖拽把手：hover 时从父级 group/milestone 控制显示 */}
-        <div className="cursor-grab opacity-0 transition-opacity group-hover/milestone:opacity-40 hover:!opacity-100 shrink-0 text-neutral-400 dark:text-neutral-500 active:cursor-grabbing">
+        {/* 拖拽把手：用 Pointer Events，兼容 Tauri WebView */}
+        <div
+          className="cursor-grab opacity-0 transition-opacity group-hover/milestone:opacity-40 hover:!opacity-100 shrink-0 touch-none select-none text-neutral-400 active:cursor-grabbing dark:text-neutral-500"
+          onPointerDown={onHandlePointerDown}
+        >
           <DotsSixVertical size={14} weight="bold" />
         </div>
 
@@ -80,7 +88,6 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
           {milestone.title}
         </span>
 
-        {/* 进度徽章 */}
         {total > 0 && (
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -102,7 +109,6 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
         </button>
       </div>
 
-      {/* 进度条 */}
       {total > 0 && !milestone.collapsed && (
         <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-700">
           <div
@@ -112,7 +118,6 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
         </div>
       )}
 
-      {/* 子任务列表 */}
       {!milestone.collapsed && (
         <div className="pb-3">
           <ul className="space-y-1 px-4">
@@ -140,7 +145,6 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
                   >
                     {task.title}
                   </span>
-                  {/* 快速添加到今日番茄任务 */}
                   {!task.done && (
                     <button
                       onClick={() => handleAddToPomodoro(task.id, task.title)}
@@ -168,7 +172,6 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
             })}
           </ul>
 
-          {/* 添加子任务输入框 */}
           <form onSubmit={handleAddTask} className="mt-2 flex gap-2 px-4">
             <input
               type="text"
@@ -193,7 +196,7 @@ function MilestoneCard({ id, isDragging }: { id: string; isDragging?: boolean })
   );
 }
 
-/** 项目阶段目标面板，支持拖拽排序 */
+/** 项目阶段目标面板，支持 Pointer Events 拖拽排序（兼容 Tauri WebView） */
 export function MilestonePanel() {
   const { milestones, addMilestone, reorderMilestones } = useMilestoneStore();
   const [input, setInput] = useState("");
@@ -203,6 +206,11 @@ export function MilestonePanel() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
+  // 用 ref 在 pointermove/pointerup 闭包中读取最新值，避免 stale closure
+  const dragFromRef = useRef<number | null>(null);
+  const overIndexRef = useRef<number | null>(null);
+  const itemsRef = useRef<(HTMLLIElement | null)[]>([]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addMilestone(input);
@@ -210,31 +218,63 @@ export function MilestonePanel() {
     setAdding(false);
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  /** 在把手上按下时启动拖拽，改用 Pointer Events 代替 HTML5 drag API */
+  const startDrag = (e: React.PointerEvent, index: number) => {
+    e.preventDefault(); // 防止文本选择
+    dragFromRef.current = index;
+    overIndexRef.current = index;
     setDragIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-    // 必须设置 data，部分浏览器才允许 drop
-    e.dataTransfer.setData("text/plain", String(index));
-  };
+    setOverIndex(index);
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (index !== dragIndex) setOverIndex(index);
-  };
+    const onMove = (ev: PointerEvent) => {
+      const items = itemsRef.current;
+      const validItems = items.filter(Boolean) as HTMLLIElement[];
+      if (validItems.length === 0) return;
 
-  const handleDrop = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (dragIndex !== null && dragIndex !== index) {
-      reorderMilestones(dragIndex, index);
-    }
-    setDragIndex(null);
-    setOverIndex(null);
-  };
+      // 鼠标超出列表上边缘 → 目标为第一项
+      const firstRect = validItems[0].getBoundingClientRect();
+      if (ev.clientY < firstRect.top) {
+        overIndexRef.current = 0;
+        setOverIndex(0);
+        return;
+      }
+      // 鼠标超出列表下边缘 → 目标为最后一项
+      const lastRect = validItems[validItems.length - 1].getBoundingClientRect();
+      if (ev.clientY > lastRect.bottom) {
+        const last = validItems.length - 1;
+        overIndexRef.current = last;
+        setOverIndex(last);
+        return;
+      }
+      // 命中某一项
+      for (let i = 0; i < items.length; i++) {
+        const el = items[i];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+          overIndexRef.current = i;
+          setOverIndex(i);
+          break;
+        }
+      }
+    };
 
-  const handleDragEnd = () => {
-    setDragIndex(null);
-    setOverIndex(null);
+    const onUp = () => {
+      const from = dragFromRef.current;
+      const to = overIndexRef.current;
+      if (from !== null && to !== null && from !== to) {
+        reorderMilestones(from, to);
+      }
+      dragFromRef.current = null;
+      overIndexRef.current = null;
+      setDragIndex(null);
+      setOverIndex(null);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
   };
 
   return (
@@ -254,7 +294,6 @@ export function MilestonePanel() {
         </button>
       </div>
 
-      {/* 添加里程碑输入框 */}
       {adding && (
         <form onSubmit={handleSubmit} className="mb-3 flex gap-2">
           <input
@@ -287,18 +326,18 @@ export function MilestonePanel() {
         {milestones.map((m, i) => (
           <li
             key={m.id}
+            ref={(el) => { itemsRef.current[i] = el; }}
             className="group/milestone relative"
-            draggable
-            onDragStart={(e) => handleDragStart(e, i)}
-            onDragOver={(e) => handleDragOver(e, i)}
-            onDrop={(e) => handleDrop(e, i)}
-            onDragEnd={handleDragEnd}
           >
             {/* 插入线：拖拽悬停时在目标卡片上方显示 */}
-            {overIndex === i && dragIndex !== i && (
+            {overIndex === i && dragIndex !== null && dragIndex !== i && (
               <div className="pointer-events-none absolute -top-1 inset-x-0 z-10 h-0.5 rounded-full bg-pomodoro-500" />
             )}
-            <MilestoneCard id={m.id} isDragging={dragIndex === i} />
+            <MilestoneCard
+              id={m.id}
+              isDragging={dragIndex === i}
+              onHandlePointerDown={(e) => startDrag(e, i)}
+            />
           </li>
         ))}
       </ul>
