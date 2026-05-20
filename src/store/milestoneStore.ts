@@ -17,6 +17,14 @@ interface MilestoneStore {
   addMilestoneTask: (milestoneId: string, title: string) => void;
   removeMilestoneTask: (milestoneId: string, taskId: string) => void;
   toggleMilestoneTask: (milestoneId: string, taskId: string) => void;
+  updateTaskCompletedAt: (milestoneId: string, taskId: string, completedAt: string) => void;
+}
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+
+function formatNow(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function generateId(): string {
@@ -110,12 +118,33 @@ export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
   },
 
   toggleMilestoneTask: (milestoneId: string, taskId: string) => {
+    const milestones = get().milestones.map((m) => {
+      if (m.id !== milestoneId) return m;
+      return {
+        ...m,
+        tasks: m.tasks.map((t) => {
+          if (t.id !== taskId) return t;
+          const nowDone = !t.done;
+          return {
+            ...t,
+            done: nowDone,
+            // 勾选时自动记录完成时间，取消勾选时清除
+            completedAt: nowDone ? formatNow() : undefined,
+          };
+        }),
+      };
+    });
+    persist(milestones);
+    set({ milestones });
+  },
+
+  updateTaskCompletedAt: (milestoneId: string, taskId: string, completedAt: string) => {
     const milestones = get().milestones.map((m) =>
       m.id === milestoneId
         ? {
             ...m,
             tasks: m.tasks.map((t) =>
-              t.id === taskId ? { ...t, done: !t.done } : t,
+              t.id === taskId ? { ...t, completedAt } : t,
             ),
           }
         : m,

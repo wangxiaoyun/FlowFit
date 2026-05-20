@@ -58,6 +58,7 @@ export interface MilestoneTask {
   title: string;
   done: boolean;
   createdAt: number;
+  completedAt?: string; // yyyy-MM-dd HH:mm:ss，勾选时自动写入，可手动编辑
 }
 
 /** A project milestone / phase goal */
