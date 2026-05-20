@@ -28,6 +28,29 @@ export async function writeDataFile(
 }
 
 /**
+ * 从 dataPath 目录读取 JSON 文件并反序列化。
+ * 文件不存在或解析失败时返回 fallback。
+ */
+export async function readDataFile<T>(
+  dataPath: string,
+  filename: string,
+  fallback: T,
+): Promise<T> {
+  if (!isTauri || !dataPath) return fallback;
+  try {
+    const { readTextFile, exists } = await import("@tauri-apps/plugin-fs");
+    const sep = dataPath.endsWith("/") || dataPath.endsWith("\\") ? "" : "/";
+    const path = `${dataPath}${sep}${filename}`;
+    if (!(await exists(path))) return fallback;
+    const content = await readTextFile(path);
+    return JSON.parse(content) as T;
+  } catch (err) {
+    console.warn(`[fileStorage] Failed to read ${filename}:`, err);
+    return fallback;
+  }
+}
+
+/**
  * 弹出系统文件夹选择对话框（Tauri dialog 插件），返回用户选择的路径。
  * 非 Tauri 环境下返回 null。
  */

@@ -5,14 +5,53 @@ import { StatsPanel } from "./components/StatsPanel";
 import { WeekChart } from "./components/WeekChart";
 import { TaskList } from "./components/TaskList";
 import { MilestonePanel } from "./components/MilestonePanel";
+import { useTimerStore } from "./store/timerStore";
+import { useTaskStore } from "./store/taskStore";
+import { useMilestoneStore } from "./store/milestoneStore";
+import { isTauri, readDataFile } from "./utils/fileStorage";
+import { saveToStorage } from "./utils/storage";
+import { STORAGE_KEYS } from "./constants";
+import type { Task, DailyStats, Milestone } from "./types";
+
+/**
+ * 若设置了 dataPath，从本地 JSON 文件恢复数据到 store。
+ * 以文件为权威来源，覆盖 localStorage（处理重装后数据丢失的场景）。
+ */
+async function restoreFromDataPath(): Promise<void> {
+  const { dataPath } = useTimerStore.getState().settings;
+  if (!dataPath || !isTauri) return;
+
+  const [tasks, stats, milestones] = await Promise.all([
+    readDataFile<Task[] | null>(dataPath, "pomodoro-tasks.json", null),
+    readDataFile<DailyStats[] | null>(dataPath, "pomodoro-stats.json", null),
+    readDataFile<Milestone[] | null>(dataPath, "pomodoro-milestones.json", null),
+  ]);
+
+  if (tasks !== null) {
+    saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    useTaskStore.setState({ tasks });
+  }
+  if (stats !== null) {
+    saveToStorage(STORAGE_KEYS.STATS, stats);
+    useTaskStore.setState({ dailyStats: stats });
+  }
+  if (milestones !== null) {
+    saveToStorage(STORAGE_KEYS.MILESTONES, milestones);
+    useMilestoneStore.setState({ milestones });
+  }
+}
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
 
-  // Remove preload class after mount so transitions work
   useEffect(() => {
-    document.documentElement.classList.remove("preload");
-    setLoaded(true);
+    async function init() {
+      document.documentElement.classList.remove("preload");
+      // 数据恢复完成后再显示 UI，避免显示旧数据再闪烁到新数据
+      await restoreFromDataPath();
+      setLoaded(true);
+    }
+    init();
   }, []);
 
   if (!loaded) return null;
