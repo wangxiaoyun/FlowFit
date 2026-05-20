@@ -1,14 +1,76 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter, Manager,
 };
+
+/// 在屏幕右下角弹出提肛引导浮窗（无边框、置顶、跳过任务栏）。
+/// reps: 总组数，hold_seconds: 每组收缩秒数。
+#[tauri::command]
+async fn show_kegel_popup(
+    app: tauri::AppHandle,
+    reps: u32,
+    hold_seconds: u32,
+) -> Result<(), String> {
+    // 关闭已有弹窗，防止重复
+    if let Some(existing) = app.get_webview_window("kegel-popup") {
+        let _ = existing.close();
+    }
+
+    let popup_w = 340.0_f64;
+    let popup_h = 460.0_f64;
+    let margin = 16.0_f64;
+
+    // 通过 URL 参数将 reps/hold 传递给前端弹窗页面
+    let url_path = format!("?popup=kegel&reps={}&hold={}", reps, hold_seconds);
+
+    let win = tauri::WebviewWindowBuilder::new(
+        &app,
+        "kegel-popup",
+        tauri::WebviewUrl::App(url_path.into()),
+    )
+    .title("FlowFit")
+    .inner_size(popup_w, popup_h)
+    .decorations(false)   // 无标题栏
+    .always_on_top(true)  // 后台也可见
+    .skip_taskbar(true)   // 不占任务栏槽位
+    .resizable(false)
+    .transparent(true)    // 透明背景，让 CSS 圆角生效
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    // 定位到主显示器右下角
+    if let Ok(Some(monitor)) = win.primary_monitor() {
+        let size = monitor.size();
+        let scale = monitor.scale_factor();
+        let x = (size.width as f64 / scale) - popup_w - margin;
+        let y = (size.height as f64 / scale) - popup_h - margin;
+        let _ = win.set_position(tauri::LogicalPosition::new(x, y));
+    }
+
+    Ok(())
+}
+
+/// 提肛练习完成：由弹窗前端调用，通过 backend 向主窗口 emit 事件再关闭弹窗。
+/// 使用 backend 中转比前端 emit 跨窗口更可靠。
+#[tauri::command]
+fn kegel_finished(app: tauri::AppHandle) {
+    // 先通知主窗口进入休息阶段
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.emit("kegel-done", ());
+    }
+    // 再关闭弹窗
+    if let Some(popup_win) = app.get_webview_window("kegel-popup") {
+        let _ = popup_win.close();
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![show_kegel_popup, kegel_finished])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

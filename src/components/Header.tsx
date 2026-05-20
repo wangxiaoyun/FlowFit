@@ -175,8 +175,9 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="flex w-full max-w-sm flex-col rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800" style={{ maxHeight: "88vh" }}>
+        {/* 标题栏固定不随内容滚动 */}
+        <div className="flex shrink-0 items-center justify-between px-6 pb-0 pt-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-neutral-900 dark:text-white">
             设置
           </h2>
@@ -188,6 +189,8 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        {/* 内容区可滚动 */}
+        <div className="scrollbar-thin overflow-y-auto px-6 pb-6 pt-5">
         <div className="space-y-5">
           {/* 专注时长 */}
           <div>
@@ -472,6 +475,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             )}
           </div>
         </div>
+        </div> {/* overflow-y-auto 滚动区结束 */}
       </div>
     </div>
   );

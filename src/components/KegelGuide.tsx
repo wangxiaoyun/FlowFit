@@ -110,17 +110,16 @@ export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProp
 
       {/* 操作按钮 */}
       <div className="flex w-full gap-3">
+        {/* 保留可点击状态，isComplete 时仍可手动操作作为保底 */}
         <button
           onClick={onSkip}
-          disabled={isComplete}
-          className="flex-1 rounded-xl border border-neutral-200 py-2 text-xs text-neutral-500 hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          className="flex-1 rounded-xl border border-neutral-200 py-2 text-xs text-neutral-500 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
         >
           跳过
         </button>
         <button
           onClick={onDone}
-          disabled={isComplete}
-          className="flex-1 rounded-xl bg-blue-500 py-2 text-xs font-medium text-white hover:bg-blue-600 disabled:opacity-40 dark:bg-blue-600 dark:hover:bg-blue-500"
+          className="flex-1 rounded-xl bg-blue-500 py-2 text-xs font-medium text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500"
         >
           完成并休息
         </button>

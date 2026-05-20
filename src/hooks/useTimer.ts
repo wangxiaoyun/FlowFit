@@ -1,4 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useTimerStore } from "../store/timerStore";
 import { useTaskStore } from "../store/taskStore";
 import { playNotification, playBreakOver } from "../utils/audio";
@@ -11,7 +13,8 @@ import {
 /**
  * 计时器核心编排 Hook。
  * 管理 1 秒间隔、阶段完成检测、声音/桌面/飞书通知、番茄记录。
- * 专注阶段结束时若 kegelEnabled，触发引导卡而非直接进入休息。
+ * 专注阶段结束时若 kegelEnabled，通过 Tauri command 在桌面右下角弹出引导窗口，
+ * 并监听 "kegel-done" 事件来执行 completePhase。
  */
 export function useTimer() {
   const {
@@ -22,8 +25,6 @@ export function useTimer() {
     tick,
     completePhase,
     activeTaskId,
-    startKegelGuide,
-    dismissKegelGuide,
   } = useTimerStore();
   const { recordPomodoro, incrementPomodoro } = useTaskStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -52,6 +53,28 @@ export function useTimer() {
     return clearTick;
   }, [status, tick, clearTick]);
 
+  // 用户完成或跳过引导卡后执行 completePhase 并重启计时器
+  const finishKegel = useCallback(() => {
+    completePhase();
+    if (useTimerStore.getState().status === "running") {
+      intervalRef.current = setInterval(() => tick(), 1000);
+    }
+  }, [completePhase, tick]);
+
+  // 用 ref 避免 listen effect 对 finishKegel 产生闭包依赖
+  const finishKegelRef = useRef(finishKegel);
+  finishKegelRef.current = finishKegel;
+
+  // 监听弹窗发出的 kegel-done 事件，触发 completePhase
+  useEffect(() => {
+    const unlistenPromise = listen("kegel-done", () => {
+      finishKegelRef.current();
+    });
+    return () => {
+      unlistenPromise.then((fn) => fn());
+    };
+  }, []);
+
   useEffect(() => {
     if (status !== "running" || remaining > 0) {
       completedRef.current = false;
@@ -62,9 +85,13 @@ export function useTimer() {
 
     clearTick();
 
-    // 专注结束 + 提肛开启：先展示引导卡，延迟 completePhase
+    // 专注结束 + 提肛开启：打开桌面右下角浮窗，不占用主页面
     if (phase === "focus" && settings.kegelEnabled) {
-      startKegelGuide();
+      invoke("show_kegel_popup", {
+        reps: settings.kegelReps,
+        holdSeconds: settings.kegelHoldSeconds,
+      }).catch(() => {});
+
       if (settings.soundEnabled) {
         playNotification(settings.volume);
         recordPomodoro();
@@ -80,7 +107,7 @@ export function useTimer() {
           `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟\n休息前先做提肛运动！`
         );
       }
-      // completePhase 由用户完成/跳过引导卡后调用（见 finishKegel）
+      // completePhase 由弹窗 kegel-done 事件触发（见上方 listen）
       return;
     }
 
@@ -119,16 +146,5 @@ export function useTimer() {
         : `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟\n休息 5 分钟，放松一下`;
       sendFeishuWebhook(settings.feishuWebhook, text);
     }
-  }, [remaining, status, phase, completePhase, settings, clearTick, recordPomodoro, incrementPomodoro, activeTaskId, startKegelGuide]);
-
-  // 用户完成或跳过引导卡时调用，执行 completePhase 并重启计时器（用于 autoStartBreak）
-  const finishKegel = useCallback(() => {
-    dismissKegelGuide();
-    completePhase();
-    if (useTimerStore.getState().status === "running") {
-      intervalRef.current = setInterval(() => tick(), 1000);
-    }
-  }, [dismissKegelGuide, completePhase, tick]);
-
-  return { finishKegel };
+  }, [remaining, status, phase, completePhase, settings, clearTick, recordPomodoro, incrementPomodoro, activeTaskId]);
 }
