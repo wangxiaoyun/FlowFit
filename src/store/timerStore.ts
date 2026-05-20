@@ -22,6 +22,9 @@ interface TimerStore {
   activeTaskId: string | null;
   setActiveTask: (id: string | null) => void;
   updateSettings: (partial: Partial<Settings>) => void;
+  showKegelGuide: boolean;
+  startKegelGuide: () => void;
+  dismissKegelGuide: () => void;
 }
 
 export const useTimerStore = create<TimerStore>((set, get) => ({
@@ -101,6 +104,12 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   },
 
   setActiveTask: (id: string | null) => set({ activeTaskId: id }),
+
+  showKegelGuide: false,
+
+  startKegelGuide: () => set({ showKegelGuide: true }),
+
+  dismissKegelGuide: () => set({ showKegelGuide: false }),
 
   updateSettings: (partial: Partial<Settings>) => {
     const { settings, phase } = get();
