@@ -13,6 +13,9 @@ export const DEFAULT_SETTINGS: Settings = {
   desktopNotify: true,
   feishuWebhook: "",
   dataPath: "",
+  kegelEnabled: true,
+  kegelReps: 10,
+  kegelHoldSeconds: 3,
 };
 
 export const STORAGE_KEYS = {

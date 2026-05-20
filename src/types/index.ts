@@ -35,6 +35,10 @@ export interface Settings {
   desktopNotify: boolean;   // browser Notification API
   feishuWebhook: string;    // Feishu bot webhook URL (empty = disabled)
   dataPath: string;         // 本地数据文件目录（空 = 仅 localStorage）
+  /** 提肛提醒设置 */
+  kegelEnabled: boolean;
+  kegelReps: number;        // 每次引导的组数
+  kegelHoldSeconds: number; // 每组收缩保持秒数
 }
 
 /** Timer store state */
