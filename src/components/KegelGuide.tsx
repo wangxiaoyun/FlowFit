@@ -95,7 +95,7 @@ export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProp
         ) : (
           <div className="h-1.5 w-32 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
             <div
-              className="h-full rounded-full bg-blue-500 dark:bg-blue-400 transition-all"
+              className="h-full rounded-full bg-blue-500 dark:bg-blue-400 transition-all duration-1000 ease-linear"
               style={{ width: `${(currentRep / reps) * 100}%` }}
             />
           </div>
