@@ -19,11 +19,11 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      <div className="mx-auto flex h-full max-w-6xl flex-col px-6">
+      <div className="flex h-full w-full flex-col px-6">
         <Header />
         <main className="flex flex-1 gap-5 overflow-hidden pb-6 pt-4">
-          {/* 左列：项目目标（可独立滚动） */}
-          <div className="scrollbar-thin w-[240px] shrink-0 overflow-y-auto">
+          {/* 左列：项目目标（自适应宽度，最小 200px） */}
+          <div className="scrollbar-thin min-w-[200px] flex-1 overflow-y-auto">
             <MilestonePanel />
           </div>
 
