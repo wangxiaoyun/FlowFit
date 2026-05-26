@@ -4,11 +4,12 @@ use tauri::{
     Emitter, Manager,
 };
 
-/// 在屏幕右下角弹出提肛引导浮窗（无边框、置顶、跳过任务栏）。
+/// 在屏幕右下角弹出休息活动引导浮窗（无边框、置顶、跳过任务栏）。
 /// reps: 总组数，hold_seconds: 每组收缩秒数。
 #[tauri::command]
 async fn show_kegel_popup(
     app: tauri::AppHandle,
+    activity_type: String,
     reps: u32,
     hold_seconds: u32,
 ) -> Result<(), String> {
@@ -22,7 +23,10 @@ async fn show_kegel_popup(
     let margin = 16.0_f64;
 
     // 通过 URL 参数将 reps/hold 传递给前端弹窗页面
-    let url_path = format!("?popup=kegel&reps={}&hold={}", reps, hold_seconds);
+    let url_path = format!(
+        "?popup=kegel&activity={}&reps={}&hold={}",
+        activity_type, reps, hold_seconds
+    );
 
     let win = tauri::WebviewWindowBuilder::new(
         &app,
@@ -51,7 +55,7 @@ async fn show_kegel_popup(
     Ok(())
 }
 
-/// 提肛练习完成：由弹窗前端调用，通过 backend 向主窗口 emit 事件再关闭弹窗。
+/// 休息活动完成：由弹窗前端调用，通过 backend 向主窗口 emit 事件再关闭弹窗。
 /// 使用 backend 中转比前端 emit 跨窗口更可靠。
 #[tauri::command]
 fn kegel_finished(app: tauri::AppHandle) {

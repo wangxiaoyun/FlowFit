@@ -5,13 +5,14 @@ import { StatsPanel } from "./components/StatsPanel";
 import { WeekChart } from "./components/WeekChart";
 import { TaskList } from "./components/TaskList";
 import { MilestonePanel } from "./components/MilestonePanel";
+import { RestPreferenceDialog } from "./components/RestPreferenceDialog";
 import { useTimerStore } from "./store/timerStore";
 import { useTaskStore } from "./store/taskStore";
 import { useMilestoneStore } from "./store/milestoneStore";
 import { isTauri, readDataFile } from "./utils/fileStorage";
 import { saveToStorage } from "./utils/storage";
 import { STORAGE_KEYS } from "./constants";
-import type { Task, DailyStats, Milestone } from "./types";
+import type { Task, DailyStats, Milestone, RestActivityType } from "./types";
 
 /** 若设置了 dataPath，从本地 JSON 文件恢复数据到 store */
 async function restoreFromDataPath(): Promise<void> {
@@ -40,6 +41,7 @@ async function restoreFromDataPath(): Promise<void> {
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
+  const { settings, updateSettings } = useTimerStore();
 
   useEffect(() => {
     async function init() {
@@ -51,6 +53,14 @@ export default function App() {
   }, []);
 
   if (!loaded) return null;
+
+  const handleRestPreferenceSelect = (restActivityType: RestActivityType) => {
+    updateSettings({
+      restPreferenceSet: true,
+      restActivityType,
+      kegelEnabled: restActivityType === "pelvicFloor",
+    });
+  };
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-white">
@@ -82,6 +92,9 @@ export default function App() {
           </div>
         </main>
       </div>
+      {!settings.restPreferenceSet && (
+        <RestPreferenceDialog onSelect={handleRestPreferenceSelect} />
+      )}
     </div>
   );
 }

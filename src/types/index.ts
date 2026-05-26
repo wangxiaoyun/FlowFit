@@ -22,6 +22,8 @@ export interface DailyStats {
 }
 
 /** Application settings */
+export type RestActivityType = "stretch" | "breathing" | "pelvicFloor" | "none";
+
 export interface Settings {
   focusDuration: number;   // minutes
   breakDuration: number;   // minutes
@@ -33,12 +35,14 @@ export interface Settings {
   soundEnabled: boolean;
   volume: number;           // 0-1
   desktopNotify: boolean;   // browser Notification API
-  feishuWebhook: string;    // Feishu bot webhook URL (empty = disabled)
   dataPath: string;         // 本地数据文件目录（空 = 仅 localStorage）
-  /** 提肛提醒设置 */
+  /** Pelvic-floor activity settings */
   kegelEnabled: boolean;
   kegelReps: number;        // 每次引导的组数
   kegelHoldSeconds: number; // 每组收缩保持秒数
+  /** Post-focus rest activity preference */
+  restPreferenceSet: boolean;
+  restActivityType: RestActivityType;
   /** DeepSeek API Key（空 = 未配置，降级为 Google 翻译） */
   deepseekApiKey: string;
 }

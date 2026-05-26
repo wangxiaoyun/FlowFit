@@ -17,7 +17,9 @@ async function openUrl(url: string) {
     try {
       await tauriOpenUrl(url);
       return;
-    } catch {}
+    } catch {
+      // Fall back to window.open when the Tauri opener plugin is unavailable.
+    }
   }
   window.open(url, "_blank", "noopener,noreferrer");
 }

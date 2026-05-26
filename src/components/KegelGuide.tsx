@@ -1,11 +1,11 @@
 import { useKegel } from "../hooks/useKegel";
 
 const HEALTH_TIPS = [
-  "提肛运动可增强盆底肌群，预防久坐导致的腰背酸痛",
+  "盆底肌训练可作为久坐后的短练习，动作以舒适为准",
   "每次收缩保持 3-5 秒后充分放松，训练效果最佳",
-  "坚持每日练习可改善盆腔血液循环，有助于提升专注力",
-  "提肛运动随时随地可做，无需器械，是上班族的隐形健身神器",
-  "盆底肌强健有助于改善坐姿，减少脊柱长期压力",
+  "训练时避免憋气，保持肩颈和腹部放松",
+  "盆底肌训练无需器械，不适时可直接跳过",
+  "短休息的重点是离开持续紧绷状态，恢复身体感知",
 ];
 
 interface KegelGuideProps {
@@ -16,7 +16,7 @@ interface KegelGuideProps {
 }
 
 /**
- * 提肛引导卡。替换计时器中列区域，引导用户完成 N 组提肛动作。
+ * 盆底肌训练引导卡。替换计时器中列区域，引导用户完成 N 组动作。
  * 完成全部组数后自动调用 onDone；跳过按钮也调用 onDone（效果一致）。
  */
 export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProps) {
@@ -34,7 +34,7 @@ export function KegelGuide({ reps, holdSeconds, onDone, onSkip }: KegelGuideProp
       <div className="flex flex-col items-center gap-1">
         <span className="text-2xl">💪</span>
         <h3 className="text-sm font-semibold tracking-wide text-neutral-800 dark:text-white">
-          提肛练习
+          盆底肌训练
         </h3>
         <p className="text-xs text-neutral-400 dark:text-neutral-500">
           专注结束，活动一下吧

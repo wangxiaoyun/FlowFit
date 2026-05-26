@@ -1,92 +1,20 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { X, ArrowClockwise, Copy, Check } from "@phosphor-icons/react";
 import { callDeepSeek } from "../utils/deepseek";
-import { useTaskStore } from "../store/taskStore";
-import { useMilestoneStore } from "../store/milestoneStore";
 import { useTimerStore } from "../store/timerStore";
+import { buildWeeklyData } from "../utils/reportPrompts";
 
 interface Props {
   onClose: () => void;
 }
 
 function buildWeeklyPrompt(): string {
-  const tasks = useTaskStore.getState().tasks;
-  const stats = useTaskStore.getState().dailyStats;
-  const milestones = useMilestoneStore.getState().milestones;
-
-  // 过去7天日期范围
-  const today = new Date();
-  const days: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    days.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-    );
-  }
-  const startDay = days[0];
-  const endDay = days[6];
-
-  // 过去7天的任务
-  const weekTasks = tasks.filter((t) => t.date >= startDay && t.date <= endDay);
-  const doneTasks = weekTasks.filter((t) => t.completed);
-  const pendingTasks = weekTasks.filter((t) => !t.completed);
-
-  // 番茄钟统计
-  const weekStats = stats.filter((s) => s.date >= startDay && s.date <= endDay);
-  const totalPomodoros = weekStats.reduce((sum, s) => sum + s.totalPomodoros, 0);
-  const activeDays = weekStats.filter((s) => s.totalPomodoros > 0).length;
-
-  // 里程碑进度（有子任务的）
-  const activeMs = milestones.filter((m) => m.tasks.length > 0);
-
-  // 拼接数据给模型
-  const lines: string[] = [
-    `【统计周期】${startDay} 至 ${endDay}`,
-    "",
-    `【番茄钟数据】`,
-    `本周共完成 ${totalPomodoros} 个番茄钟，有效工作天数 ${activeDays}/7 天`,
-    "",
-    `【已完成任务（${doneTasks.length} 条）】`,
-  ];
-  if (doneTasks.length > 0) {
-    doneTasks.forEach((t) => lines.push(`- [${t.date}] ${t.title}（${t.pomodoroCount} 🍅）`));
-  } else {
-    lines.push("- 暂无");
-  }
-
-  lines.push("", `【未完成任务（${pendingTasks.length} 条）】`);
-  if (pendingTasks.length > 0) {
-    pendingTasks.forEach((t) => lines.push(`- [${t.date}] ${t.title}（${t.pomodoroCount} 🍅）`));
-  } else {
-    lines.push("- 暂无");
-  }
-
-  if (activeMs.length > 0) {
-    lines.push("", "【项目里程碑】");
-    activeMs.forEach((m) => {
-      const doneCount = m.tasks.filter((t) => t.done).length;
-      lines.push(`- ${m.title}：完成 ${doneCount}/${m.tasks.length} 个子任务`);
-    });
-  }
-
-  const dataSection = lines.join("\n");
-
-  return `你是一名专业的工作助手。以下是我的一周工作数据，请帮我生成一份简洁的中文工作周报。
-
-${dataSection}
-
-要求：
-1. 篇幅 300-500 字
-2. 分为以下几个部分：本周总结、主要工作内容、未完成事项（如有）、下周计划建议
-3. 语言专业、简洁，突出重点
-4. 如果数据较少，根据已有信息合理推断，保持周报完整性
-5. 直接输出周报正文，不要额外解释`;
+  return buildWeeklyData().prompt;
 }
 
 /**
  * 工作周报生成弹窗。
- * 调用 DeepSeek API 根据本周任务/番茄数据生成周报，支持手动编辑后复制。
+ * 调用 DeepSeek API 根据本周项目工作记录生成周报，支持手动编辑后复制。
  */
 export function WeeklyReportModal({ onClose }: Props) {
   const apiKey = useTimerStore((s) => s.settings.deepseekApiKey);
@@ -118,7 +46,10 @@ export function WeeklyReportModal({ onClose }: Props) {
 
   // 打开时自动生成
   useEffect(() => {
-    generate();
+    const id = window.setTimeout(() => {
+      void generate();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [generate]);
 
   const handleCopy = useCallback(async () => {

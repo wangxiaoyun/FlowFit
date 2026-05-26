@@ -11,11 +11,12 @@ export const DEFAULT_SETTINGS: Settings = {
   soundEnabled: true,
   volume: 0.5,
   desktopNotify: true,
-  feishuWebhook: "",
   dataPath: "",
   kegelEnabled: true,
   kegelReps: 10,
   kegelHoldSeconds: 3,
+  restPreferenceSet: false,
+  restActivityType: "stretch",
   deepseekApiKey: "",
 };
 

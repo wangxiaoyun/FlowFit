@@ -7,13 +7,12 @@ import { playNotification, playBreakOver } from "../utils/audio";
 import {
   requestDesktopPermission,
   sendDesktopNotification,
-  sendFeishuWebhook,
 } from "../utils/notify";
 
 /**
  * 计时器核心编排 Hook。
- * 管理 1 秒间隔、阶段完成检测、声音/桌面/飞书通知、番茄记录。
- * 专注阶段结束时若 kegelEnabled，通过 Tauri command 在桌面右下角弹出引导窗口，
+ * 管理 1 秒间隔、阶段完成检测、声音/桌面通知、番茄记录。
+ * 专注阶段结束时若选择了休息活动，通过 Tauri command 在桌面右下角弹出引导窗口，
  * 并监听 "kegel-done" 事件来执行 completePhase。
  */
 export function useTimer() {
@@ -67,7 +66,10 @@ export function useTimer() {
 
   // 用 ref 避免 listen effect 对 finishKegel 产生闭包依赖
   const finishKegelRef = useRef(finishKegel);
-  finishKegelRef.current = finishKegel;
+
+  useEffect(() => {
+    finishKegelRef.current = finishKegel;
+  }, [finishKegel]);
 
   // 监听弹窗发出的 kegel-done 事件，触发 completePhase
   useEffect(() => {
@@ -89,8 +91,8 @@ export function useTimer() {
 
     clearTick();
 
-    // 专注结束 + 提肛开启：打开桌面右下角浮窗，不占用主页面
-    if (phase === "focus" && settings.kegelEnabled) {
+    // 专注结束 + 休息活动开启：打开桌面右下角浮窗，不占用主页面
+    if (phase === "focus" && settings.restActivityType !== "none") {
       // 先处理通知和番茄记录（无论弹窗是否成功都要做）
       if (settings.soundEnabled) {
         playNotification(settings.volume);
@@ -98,22 +100,15 @@ export function useTimer() {
         incrementPomodoro(activeTaskId);
       }
       if (settings.desktopNotify) {
-        sendDesktopNotification("FlowFit", "专注完成！先来个提肛运动 💪");
+        sendDesktopNotification("FlowFit", "专注完成！先活动一下再休息");
       }
-      if (settings.feishuWebhook) {
-        const sessionCount = useTimerStore.getState().currentPomodoro + 1;
-        sendFeishuWebhook(
-          settings.feishuWebhook,
-          `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟\n休息前先做提肛运动！`
-        );
-      }
-
       invoke("show_kegel_popup", {
+        activityType: settings.restActivityType,
         reps: settings.kegelReps,
         holdSeconds: settings.kegelHoldSeconds,
       }).catch((err) => {
         // 弹窗失败兜底：直接进入休息阶段，防止计时器卡在 00:00
-        console.error("提肛弹窗打开失败，回退直接进入休息：", err);
+        console.error("休息活动弹窗打开失败，回退直接进入休息：", err);
         completePhase();
         if (useTimerStore.getState().status === "running") {
           intervalRef.current = setInterval(() => tick(), 1000);
@@ -123,7 +118,7 @@ export function useTimer() {
       return;
     }
 
-    // 休息结束 或 提肛关闭时走原有逻辑
+    // 休息结束 或 休息活动关闭时走原有逻辑
     const newPhase = completePhase();
     if (useTimerStore.getState().status === "running") {
       intervalRef.current = setInterval(() => tick(), 1000);
@@ -151,12 +146,5 @@ export function useTimer() {
       }
     }
 
-    if (isFocusDone && settings.feishuWebhook) {
-      const sessionCount = useTimerStore.getState().currentPomodoro;
-      const text = isLongBreak
-        ? `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟（长休息）\n好好休息一下！`
-        : `💪 FlowFit\n完成第 ${sessionCount} 个番茄钟\n休息 5 分钟，放松一下`;
-      sendFeishuWebhook(settings.feishuWebhook, text);
-    }
-  }, [remaining, status, phase, completePhase, settings, clearTick, recordPomodoro, incrementPomodoro, activeTaskId]);
+  }, [remaining, status, phase, completePhase, settings, clearTick, recordPomodoro, incrementPomodoro, activeTaskId, tick]);
 }

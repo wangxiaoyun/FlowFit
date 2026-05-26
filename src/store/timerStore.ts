@@ -3,6 +3,7 @@ import type { TimerPhase, TimerStatus, Settings } from "../types";
 import { DEFAULT_SETTINGS } from "../constants";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
 import { writeDataFile } from "../utils/fileStorage";
+import { normalizeRestSettings } from "../utils/restActivities";
 
 interface TimerStore {
   phase: TimerPhase;
@@ -24,6 +25,8 @@ interface TimerStore {
   updateSettings: (partial: Partial<Settings>) => void;
 }
 
+const storedSettings = loadFromStorage<Partial<Settings>>("pomodoro-settings", {});
+
 export const useTimerStore = create<TimerStore>((set, get) => ({
   phase: "focus",
   status: "idle",
@@ -31,7 +34,11 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   currentPomodoro: loadFromStorage("pomodoro-consecutive", 0),
   sessionCount: 0,
   // 合并 DEFAULT_SETTINGS 确保新增字段在旧版 localStorage 数据中也存在
-  settings: { ...DEFAULT_SETTINGS, ...loadFromStorage<Partial<Settings>>("pomodoro-settings", {}) },
+  settings: {
+    ...DEFAULT_SETTINGS,
+    ...storedSettings,
+    ...normalizeRestSettings(storedSettings),
+  },
   activeTaskId: null,
 
   start: () => set({ status: "running" }),

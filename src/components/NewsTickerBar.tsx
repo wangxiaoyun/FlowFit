@@ -16,7 +16,7 @@ export function NewsTickerBar({ items, onOpen }: Props) {
   // 将标题拼接成一串，间距用全角空格隔开
   const tickerText = items
     .map((item, i) => `${i + 1}. ${item.title}`)
-    .join("　　　　");
+    .join("\u3000\u3000\u3000\u3000");
 
   return (
     <div
@@ -33,8 +33,8 @@ export function NewsTickerBar({ items, onOpen }: Props) {
       <div className="flex-1 overflow-hidden">
         <div className="animate-ticker inline-block whitespace-nowrap text-xs text-neutral-600 dark:text-neutral-400">
           {/* 两份内容：第一份滚完后无缝衔接第二份（translateX -50%） */}
-          <span>{tickerText}　　　　　　</span>
-          <span>{tickerText}　　　　　　</span>
+          <span>{tickerText}{"\u3000\u3000\u3000\u3000\u3000\u3000"}</span>
+          <span>{tickerText}{"\u3000\u3000\u3000\u3000\u3000\u3000"}</span>
         </div>
       </div>
 

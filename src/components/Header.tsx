@@ -9,7 +9,6 @@ import {
   Bell,
   BellSlash,
   BellRinging,
-  Link,
   Question,
   FolderOpen,
   HardDrive,
@@ -20,9 +19,10 @@ import {
 } from "@phosphor-icons/react";
 import { useTheme } from "../hooks/useTheme";
 import { useTimerStore } from "../store/timerStore";
-import type { Settings } from "../types";
+import type { RestActivityType, Settings } from "../types";
 import { isTauri, selectDirectory } from "../utils/fileStorage";
 import { testDeepSeekKey } from "../utils/deepseek";
+import { REST_ACTIVITY_OPTIONS } from "../utils/restActivities";
 import { ReportPanel } from "./ReportPanel";
 
 /**
@@ -33,7 +33,6 @@ export function Header() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const hasApiKey = !!useTimerStore((s) => s.settings.deepseekApiKey);
 
   return (
     <>
@@ -52,17 +51,14 @@ export function Header() {
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          {/* 周报按钮：配置了 API Key 才显示 */}
-          {hasApiKey && (
-            <button
-              onClick={() => setShowReport(true)}
-              className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              aria-label="日报 / 周报管理"
-              title="日报 / 周报管理"
-            >
-              <BookOpen size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => setShowReport(true)}
+            className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            aria-label="日报 / 周报管理"
+            title="日报 / 周报管理"
+          >
+            <BookOpen size={18} />
+          </button>
           <button
             onClick={() => setShowHelp(true)}
             className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
@@ -186,6 +182,17 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
       updateSettings(partial);
     },
     [updateSettings],
+  );
+
+  const handleRestActivityChange = useCallback(
+    (restActivityType: RestActivityType) => {
+      handleChange({
+        restPreferenceSet: true,
+        restActivityType,
+        kegelEnabled: restActivityType === "pelvicFloor",
+      });
+    },
+    [handleChange],
   );
 
   const handleVerifyKey = async () => {
@@ -338,24 +345,6 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             </button>
           </div>
 
-          {/* 飞书 Webhook */}
-          <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-              <Link size={14} />
-              飞书机器人 Webhook 地址
-            </label>
-            <input
-              type="url"
-              value={settings.feishuWebhook}
-              onChange={(e) => handleChange({ feishuWebhook: e.target.value })}
-              placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-pomodoro-400 focus:outline-none focus:ring-2 focus:ring-pomodoro-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white dark:placeholder-neutral-500"
-            />
-            <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
-              在飞书创建群机器人，将 Webhook 地址粘贴到此处，完成番茄钟后自动发送通知。
-            </p>
-          </div>
-
           {/* 数据文件目录（仅桌面端可用） */}
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
@@ -451,33 +440,40 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             </label>
           </div>
 
-          {/* 提肛提醒 */}
+          {/* 休息活动 */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 dark:border-neutral-600 dark:bg-neutral-700/50">
-              <span className="text-sm text-neutral-700 dark:text-neutral-200">
-                💪 专注结束时提肛提醒
-              </span>
-              <button
-                onClick={() => handleChange({ kegelEnabled: !settings.kegelEnabled })}
-                className={`relative h-5 w-9 rounded-full transition-colors ${
-                  settings.kegelEnabled
-                    ? "bg-blue-500"
-                    : "bg-neutral-300 dark:bg-neutral-600"
-                }`}
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    settings.kegelEnabled ? "translate-x-4" : ""
-                  }`}
-                />
-              </button>
+            <div>
+              <div className="mb-2 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                休息活动
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {REST_ACTIVITY_OPTIONS.map((option) => {
+                  const active = settings.restActivityType === option.type;
+                  return (
+                    <button
+                      key={option.type}
+                      onClick={() => handleRestActivityChange(option.type)}
+                      className={`rounded-xl border px-3 py-2 text-left transition-colors ${
+                        active
+                          ? "border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-950/30 dark:text-blue-300"
+                          : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-blue-300 hover:bg-blue-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-blue-700 dark:hover:bg-blue-950/20"
+                      }`}
+                    >
+                      <div className="text-xs font-medium">{option.title}</div>
+                      <div className="mt-1 line-clamp-2 text-[11px] leading-relaxed opacity-75">
+                        {option.description}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {settings.kegelEnabled && (
+            {settings.restActivityType === "pelvicFloor" && (
               <>
                 <div>
                   <label className="mb-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                    提肛次数（组）
+                    训练次数（组）
                   </label>
                   <input
                     type="number"
@@ -561,6 +557,25 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
               配置后可使用 AI 日报 / 周报自动生成功能。
             </p>
+            <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300">
+              <p className="font-medium">获取方式</p>
+              <ol className="mt-1 list-decimal space-y-1 pl-4">
+                <li>
+                  打开{" "}
+                  <a
+                    href="https://platform.deepseek.com/api_keys"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100"
+                  >
+                    DeepSeek API Keys
+                  </a>
+                  。
+                </li>
+                <li>登录或注册 DeepSeek Platform 账号。</li>
+                <li>创建 API Key，复制后粘贴到上方输入框并点击验证。</li>
+              </ol>
+            </div>
           </div>
         </div>
         </div> {/* overflow-y-auto 滚动区结束 */}

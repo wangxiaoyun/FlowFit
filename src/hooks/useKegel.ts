@@ -8,7 +8,7 @@ export interface KegelState {
 }
 
 /**
- * 驱动提肛引导倒计时。每组 = 收缩 holdSeconds 秒 + 放松 1 秒。
+ * 驱动盆底肌训练倒计时。每组 = 收缩 holdSeconds 秒 + 放松 1 秒。
  * 完成全部 reps 组后调用 onComplete。
  */
 export function useKegel(
@@ -20,7 +20,10 @@ export function useKegel(
   const [tick, setTick] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const restSeconds = 3; // 每组放松休息秒数
   const ticksPerRep = holdSeconds + restSeconds;
@@ -36,7 +39,8 @@ export function useKegel(
   // 检测完成
   useEffect(() => {
     if (!isComplete && tick >= totalTicks) {
-      setIsComplete(true);
+      const id = window.setTimeout(() => setIsComplete(true), 0);
+      return () => window.clearTimeout(id);
     }
   }, [tick, totalTicks, isComplete]);
 

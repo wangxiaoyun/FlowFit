@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   X,
   ArrowClockwise,
@@ -35,20 +35,21 @@ export function ReportPanel({ onClose }: Props) {
   const [generating, setGenerating] = useState<GeneratingType>(null);
   const [genError, setGenError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [weeklyStart, setWeeklyStart] = useState(() => weekRange().start);
+  const [weeklyEnd, setWeeklyEnd] = useState(() => weekRange().end);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const selectedReport = reports.find((r) => r.id === selectedId) ?? null;
-
-  // 当报告列表变化且没有选中时，自动选第一条
-  useEffect(() => {
-    if (!selectedId && reports.length > 0) {
-      setSelectedId(reports[0].id);
-    }
-  }, [reports, selectedId]);
+  const selectedReport = reports.find((r) => r.id === selectedId) ?? reports[0] ?? null;
+  const effectiveSelectedId = selectedReport?.id ?? null;
+  const weeklyRangeInvalid = weeklyStart > weeklyEnd;
 
   const generate = useCallback(
     async (type: "daily" | "weekly") => {
       if (!apiKey) return;
+      if (type === "weekly" && weeklyRangeInvalid) {
+        setGenError("请选择有效的周报日期范围");
+        return;
+      }
       setGenerating(type);
       setGenError("");
       try {
@@ -63,7 +64,7 @@ export function ReportPanel({ onClose }: Props) {
           rawData = result.rawData;
           period = today;
         } else {
-          const result = buildWeeklyData();
+          const result = buildWeeklyData({ start: weeklyStart, end: weeklyEnd });
           prompt = result.prompt;
           rawData = result.rawData;
           period = result.period;
@@ -93,7 +94,7 @@ export function ReportPanel({ onClose }: Props) {
         setGenerating(null);
       }
     },
-    [apiKey, addReport]
+    [apiKey, addReport, weeklyEnd, weeklyRangeInvalid, weeklyStart]
   );
 
   const handleCopy = useCallback(async () => {
@@ -145,20 +146,6 @@ export function ReportPanel({ onClose }: Props) {
               )}
               今日日报
             </button>
-            {/* 生成本周周报 */}
-            <button
-              onClick={() => generate("weekly")}
-              disabled={!apiKey || generating !== null}
-              title={`生成本周周报（${weekRange().start}~${weekRange().end}）`}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
-            >
-              {generating === "weekly" ? (
-                <ArrowClockwise size={13} className="animate-spin" />
-              ) : (
-                <CalendarDots size={13} />
-              )}
-              本周周报
-            </button>
             <button
               onClick={onClose}
               className="ml-1 rounded-full p-1.5 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
@@ -166,6 +153,42 @@ export function ReportPanel({ onClose }: Props) {
               <X size={18} />
             </button>
           </div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-100 px-5 py-3 text-xs dark:border-neutral-700">
+          <span className="font-medium text-neutral-600 dark:text-neutral-300">
+            周报范围
+          </span>
+          <input
+            type="date"
+            value={weeklyStart}
+            onChange={(e) => setWeeklyStart(e.target.value)}
+            className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-neutral-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+          />
+          <span className="text-neutral-400">至</span>
+          <input
+            type="date"
+            value={weeklyEnd}
+            onChange={(e) => setWeeklyEnd(e.target.value)}
+            className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-neutral-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
+          />
+          <button
+            onClick={() => generate("weekly")}
+            disabled={!apiKey || generating !== null || weeklyRangeInvalid}
+            title={
+              weeklyRangeInvalid
+                ? "请选择有效的周报日期范围"
+                : `生成周报（${weeklyStart}~${weeklyEnd}）`
+            }
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+          >
+            {generating === "weekly" ? (
+              <ArrowClockwise size={13} className="animate-spin" />
+            ) : (
+              <CalendarDots size={13} />
+            )}
+            生成周报
+          </button>
         </div>
 
         {/* 未配置 API Key 提示 */}
@@ -197,7 +220,7 @@ export function ReportPanel({ onClose }: Props) {
                   key={r.id}
                   onClick={() => setSelectedId(r.id)}
                   className={`w-full px-4 py-2.5 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 ${
-                    selectedId === r.id
+                    effectiveSelectedId === r.id
                       ? "bg-blue-50 dark:bg-blue-900/20"
                       : ""
                   }`}
@@ -249,7 +272,11 @@ export function ReportPanel({ onClose }: Props) {
                     {/* 重新生成 */}
                     <button
                       onClick={() => generate(selectedReport.type)}
-                      disabled={!apiKey || generating !== null}
+                      disabled={
+                        !apiKey ||
+                        generating !== null ||
+                        (selectedReport.type === "weekly" && weeklyRangeInvalid)
+                      }
                       className="rounded-full p-1.5 text-neutral-400 hover:bg-neutral-100 disabled:opacity-40 dark:hover:bg-neutral-700"
                       title="重新生成"
                     >

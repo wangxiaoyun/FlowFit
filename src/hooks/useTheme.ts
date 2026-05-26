@@ -24,14 +24,16 @@ export function useTheme() {
 
   useEffect(() => {
     if (settings.theme === "dark") {
-      applyTheme("dark");
+      const id = window.setTimeout(() => applyTheme("dark"), 0);
+      return () => window.clearTimeout(id);
     } else if (settings.theme === "light") {
-      applyTheme("light");
+      const id = window.setTimeout(() => applyTheme("light"), 0);
+      return () => window.clearTimeout(id);
     } else {
       // "system" — listen to prefers-color-scheme
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-        applyTheme(e.matches ? "dark" : "light");
+        window.setTimeout(() => applyTheme(e.matches ? "dark" : "light"), 0);
       };
       handler(mq);
       mq.addEventListener("change", handler as (e: MediaQueryListEvent) => void);

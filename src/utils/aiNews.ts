@@ -137,7 +137,9 @@ export async function fetchAINews(deepseekApiKey?: string): Promise<NewsItem[]> 
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) cached = JSON.parse(raw) as NewsCache;
-  } catch {}
+  } catch {
+    cached = null;
+  }
   if (cached?.date === today && cached.mode === mode && cached.items.length > 0) {
     return cached.items;
   }

@@ -1,6 +1,6 @@
 /**
  * Multi-channel notification system.
- * Supports browser desktop notifications and Feishu webhook push.
+ * Supports browser desktop notifications.
  */
 
 // ── Desktop Notification API ────────────────────────────────────────────
@@ -38,64 +38,5 @@ export function sendDesktopNotification(
     setTimeout(() => n.close(), 5000);
   } catch {
     // silently degrade
-  }
-}
-
-// ── Feishu / Lark Webhook ──────────────────────────────────────────────
-
-/** 
- * Push a plain-text message to a Feishu bot webhook URL.
- * Returns true if the POST succeeded (HTTP 2xx).
- */
-export async function sendFeishuWebhook(
-  webhookUrl: string,
-  text: string,
-): Promise<boolean> {
-  if (!webhookUrl || !webhookUrl.startsWith("https://")) return false;
-
-  try {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        msg_type: "text",
-        content: { text },
-      }),
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-/** 
- * Push a rich card message to a Feishu bot webhook.
- * Falls back to text if the server doesn't support cards.
- */
-export async function sendFeishuCard(
-  webhookUrl: string,
-  headerTitle: string,
-  elements: Array<{ tag: string; text: { tag: string; content: string } }>,
-): Promise<boolean> {
-  if (!webhookUrl || !webhookUrl.startsWith("https://")) return false;
-
-  try {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        msg_type: "interactive",
-        card: {
-          header: {
-            title: { tag: "plain_text", content: headerTitle },
-            template: "red",
-          },
-          elements,
-        },
-      }),
-    });
-    return response.ok;
-  } catch {
-    return false;
   }
 }

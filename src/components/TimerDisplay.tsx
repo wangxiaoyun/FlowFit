@@ -7,7 +7,7 @@ import { useTaskStore } from "../store/taskStore";
 
 /**
  * 计时器主视图：阶段标签、环形进度、时间、控制按钮。
- * 提肛提醒已改为桌面浮窗（由 useTimer 内部 invoke 打开），此组件无需感知。
+ * 休息活动提醒已改为桌面浮窗（由 useTimer 内部 invoke 打开），此组件无需感知。
  */
 export function TimerDisplay() {
   const { phase, status, remaining, settings, sessionCount, activeTaskId } =
