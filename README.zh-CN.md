@@ -204,7 +204,7 @@ flowfit/
 
 ## macOS 打包
 
-本项目包含 [GitHub Actions 工作流](.github/workflows/build-mac.yml)，可在没有 Mac 的情况下自动构建 macOS 版本：
+本项目包含 [GitHub Actions 工作流](.github/workflows/build.yml)，可在没有 Mac 的情况下自动构建 macOS 版本：
 
 1. 推送到 GitHub
 2. 进入 **Actions** → **Build Mac DMG** → **Run workflow**

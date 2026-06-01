@@ -205,7 +205,7 @@ flowfit/
 
 ## Building for macOS
 
-This project includes a [GitHub Actions workflow](.github/workflows/build-mac.yml) for automated macOS builds:
+This project includes a [GitHub Actions workflow](.github/workflows/build.yml) for automated macOS builds:
 
 1. Push to GitHub
 2. Go to **Actions** → **Build Mac DMG** → **Run workflow**
