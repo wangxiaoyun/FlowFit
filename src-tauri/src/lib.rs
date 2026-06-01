@@ -39,7 +39,7 @@ async fn show_kegel_popup(
     .always_on_top(true)  // 后台也可见
     .skip_taskbar(true)   // 不占任务栏槽位
     .resizable(false)
-    .transparent(true)    // 透明背景，让 CSS 圆角生效
+    // 注：transparent 在 Tauri v2.11 中已移除，macOS 弹窗圆角由 CSS 自行处理
     .build()
     .map_err(|e| e.to_string())?;
 
