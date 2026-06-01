@@ -1,78 +1,240 @@
-# Pomodoro Timer
+<div align="center">
+  <img src="public/favicon.svg" alt="FlowFit Logo" width="80" />
+  <h1>FlowFit</h1>
+  <p><strong>A healthy pomodoro desktop app for productive workers</strong></p>
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#screenshots">Screenshots</a> •
+    <a href="#tech-stack">Tech Stack</a> •
+    <a href="#getting-started">Getting Started</a> •
+    <a href="#project-structure">Structure</a> •
+    <a href="./README.zh-CN.md">中文</a>
+  </p>
+  <p>
+    <img src="https://img.shields.io/badge/version-1.4.1-blue" alt="Version" />
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey" alt="Platform" />
+  </p>
+</div>
 
-一个功能完整的番茄钟桌面应用，使用 React + TypeScript + Vite 构建。
+---
 
-## 功能
+## Overview
 
-- **番茄钟计时器** — 25 分钟工作 / 5 分钟休息，支持开始、暂停、重置
-- **圆形进度动画** — SVG 驱动的进度环，实时显示剩余时间
-- **任务管理** — 添加/删除任务，跟踪每个任务的番茄钟完成数，标记完成
-- **数据统计** — 今日番茄钟总数、连续番茄钟数、完成任务数
-- **暗色/亮色主题** — 支持自动跟随系统、手动切换
-- **声音通知** — Web Audio API 生成提示音，无需外部音频文件
-- **设置面板** — 可调节工作和休息时长、音量、自动开始
-- **数据持久化** — 所有数据通过 localStorage 保存，刷新不丢失
+FlowFit is a **desktop pomodoro timer** built with Tauri v2, React, and TypeScript. It goes beyond a simple timer — integrating task management, pelvic floor (Kegel) exercise reminders, milestone planning, AI-powered daily/weekly reports, and health break suggestions. Designed for knowledge workers who care about both productivity and physical well-being.
 
-## 技术栈
+> 🚧 **Status**: Active development. The macOS DMG build is coming soon via GitHub Actions.
 
-| 层 | 技术 |
-|---|---|
-| 框架 | React 18 + TypeScript (strict) |
-| 构建 | Vite |
-| 状态管理 | Zustand |
-| 样式 | Tailwind CSS v4 |
-| 图标 | Phosphor Icons |
-| 音频 | Web Audio API |
-| 持久化 | localStorage |
+## Features
 
-## 开发
+### 🍅 Core Pomodoro
+- **Focus / Break / Long Break** phases with configurable durations
+- **Circular SVG progress** animation with real-time visual feedback
+- **Active task label** displayed inside the timer ring
+- **Auto-start** mode for seamless focus-flow cycles
+- **Sound notifications** via Web Audio API (no external audio files needed)
+- **Desktop notifications** via system native notifications
+
+### ✅ Task Management
+- Add / delete tasks, track pomodoro count per task
+- **Activate a task** — pomodoros completed during activation count toward it
+- Mark tasks complete with visual check
+- Automatic daily stats aggregation
+
+### 🏋️ Pelvic Floor (Kegel) Exercise
+- **Guided Kegel sessions** after each focus session — contract / relax rhythm
+- Popup window in the bottom-right corner of the screen (decorated, always-on-top)
+- Configurable reps and hold duration
+- Educational health tips carousel during the exercise
+- Works seamlessly with the break timer — start your break after completing
+
+### 🎯 Milestone Planning
+- Create **project milestones** with sub-task breakdowns
+- Drag-and-drop reorder milestones and tasks
+- Collapse / expand milestone groups
+- Each sub-task records its completion timestamp
+- One-click add sub-task to the active pomodoro queue
+
+### 📊 Daily & Weekly Reports
+- **AI-powered report generation** using DeepSeek API
+- Daily: auto-generated work summary from today's data
+- Weekly: comprehensive weekly review with trend analysis
+- Markdown formatted, export-friendly content
+- Fallback to rule-based summary when API key is not configured
+
+### 🧘 Rest Activity Preferences
+- Choose your preferred rest activity: **Stretch** / **Breathing** / **Pelvic Floor**
+- Guided prompts after each focus session
+- Preference dialog for first-time users
+- Helps build a healthy work-rest rhythm
+
+### 🎨 Theme & UI
+- **Light / Dark / System** theme modes
+- Responsive layout (compact single-column on narrow screens)
+- Phosphor icons throughout
+- Tailwind CSS v4 styling
+- System tray with show/hide and quit actions
+- Minimize to tray on close (Windows)
+
+### 💾 Data Persistence
+- `localStorage` for browser fallback
+- **Local file storage** via Tauri FS plugin for desktop (survives reinstallation)
+- All data survives app restart and reinstall when configured
+
+## Screenshots
+
+| Main Timer | Settings | Kegel Popup |
+|:---:|:---:|:---:|
+| ![Main Page](main-page.png) | ![Settings](settings-olddata.png) | ![Kegel Popup](drag-hover.png) |
+
+> *Screenshots will be updated as the UI evolves.*
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Desktop Shell** | Tauri v2 (Rust) |
+| **Frontend** | React 19 + TypeScript 6 (strict) |
+| **Build** | Vite 8 |
+| **State** | Zustand |
+| **Style** | Tailwind CSS v4 |
+| **Icons** | Phosphor Icons |
+| **Audio** | Web Audio API |
+| **Reports** | DeepSeek API |
+| **Desktop** | Tauri FS, Dialog, Opener plugins |
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** >= 18
+- **Rust** >= 1.77 (for Tauri desktop build)
+- **Windows**: MSVC build tools (via Visual Studio Build Tools or `visualstudio` Cargo feature)
+- **macOS**: Xcode Command Line Tools (`xcode-select --install`)
+
+### Install & Run
 
 ```bash
-# 安装依赖
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/flowfit.git
+cd flowfit
+
+# Install frontend dependencies
 npm install
 
-# 启动开发服务器
+# Run in development mode (hot-reload)
+npm run tauri:dev
+
+# Build production desktop app
+npm run tauri:build
+```
+
+### Development Server Only (Browser)
+
+```bash
 npm run dev
-
-# 构建生产版本
-npm run build
-
-# 预览构建结果
-npm run preview
+# Open http://localhost:5173 in your browser
+# Note: File persistence and Kegel popup require Tauri desktop runtime
 ```
 
-## 项目结构
+## Project Structure
 
 ```
-src/
-├── types/index.ts          # 类型定义
-├── constants/index.ts      # 常量、默认配置
-├── utils/
-│   ├── storage.ts          # localStorage 持久化工具
-│   └── audio.ts            # Web Audio API 声音生成
-├── store/
-│   ├── timerStore.ts       # 计时器状态管理
-│   └── taskStore.ts        # 任务和统计状态管理
-├── hooks/
-│   ├── useTimer.ts         # 计时器核心调度
-│   └── useTheme.ts         # 主题切换
-├── components/
-│   ├── CircularProgress.tsx  # SVG 圆形进度条
-│   ├── TimerDisplay.tsx      # 计时器主视图
-│   ├── TimerControls.tsx     # 开始/暂停/重置按钮
-│   ├── Header.tsx            # 顶部导航 + 设置弹窗
-│   ├── StatsPanel.tsx        # 今日统计面板
-│   └── TaskList.tsx          # 任务管理列表
-├── App.tsx                 # 主页面布局
-├── main.tsx                # 入口
-└── index.css               # Tailwind + 全局样式
+flowfit/
+├── src/                          # Frontend source
+│   ├── main.tsx                  # Entry point (app + sub-window routing)
+│   ├── App.tsx                   # Main app layout
+│   ├── index.css                 # Tailwind + global styles
+│   ├── types/index.ts            # TypeScript type definitions
+│   ├── constants/index.ts        # Defaults, color config
+│   ├── components/
+│   │   ├── TimerDisplay.tsx       # Main timer UI with circular progress
+│   │   ├── TimerControls.tsx      # Start / Pause / Reset buttons
+│   │   ├── CircularProgress.tsx   # SVG progress ring component
+│   │   ├── Header.tsx             # Top bar with settings and theme
+│   │   ├── StatsPanel.tsx         # Today's pomodoro statistics
+│   │   ├── WeekChart.tsx          # Weekly trend chart
+│   │   ├── TaskList.tsx           # Task management list
+│   │   ├── MilestonePanel.tsx     # Milestone planning board
+│   │   ├── KegelGuide.tsx         # Kegel exercise guidance UI
+│   │   ├── KegelPopup.tsx         # Sub-window for Kegel popup
+│   │   ├── RestActivityGuide.tsx  # Rest activity prompt
+│   │   ├── RestPreferenceDialog.tsx # First-time preference selector
+│   │   ├── ReportPanel.tsx        # Daily / Weekly report display
+│   │   ├── WeeklyReportModal.tsx  # Weekly report modal
+│   │   ├── NewsModal.tsx          # AI-edited news modal
+│   │   └── NewsTickerBar.tsx      # News ticker bar
+│   ├── hooks/
+│   │   ├── useTimer.ts            # Core timer scheduling logic
+│   │   ├── useKegel.ts            # Kegel exercise state machine
+│   │   └── useTheme.ts            # Theme switching
+│   ├── store/
+│   │   ├── timerStore.ts          # Timer and settings state
+│   │   ├── taskStore.ts           # Tasks and daily stats
+│   │   ├── milestoneStore.ts      # Milestones state
+│   │   └── reportStore.ts         # Reports state
+│   ├── utils/
+│   │   ├── storage.ts             # localStorage persistence
+│   │   ├── fileStorage.ts         # Tauri FS file persistence
+│   │   ├── audio.ts               # Web Audio API sound generation
+│   │   ├── aiNews.ts              # AI news integration
+│   │   ├── deepseek.ts            # DeepSeek API client
+│   │   ├── reportPrompts.ts       # Report generation prompts
+│   │   └── restActivities.ts      # Rest activity helpers
+│   └── assets/
+│       └── hero.png
+├── src-tauri/                     # Tauri Rust backend
+│   ├── src/
+│   │   ├── main.rs                # Desktop entry point
+│   │   └── lib.rs                 # Tauri setup, tray, Kegel popup commands
+│   ├── icons/                     # App icons (all platforms)
+│   ├── tauri.conf.json            # Tauri configuration
+│   └── Cargo.toml                 # Rust dependencies
+├── public/
+│   ├── favicon.svg                # Favicon
+│   └── icons.svg                  # Icons sprite
+├── docs/                          # Design documents and plans
+│   └── superpowers/
+├── .github/workflows/
+│   └── build-mac.yml              # macOS DMG build workflow
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── eslint.config.js
 ```
 
-## 验收标准
+## Building for macOS
 
-- [x] 计时器精度误差小于 0.5 秒/分钟（基于 `setInterval` 秒级 tick）
-- [x] 页面关闭后重新打开，任务和统计数据正确恢复
-- [x] 完成一个番茄钟后自动切换到休息倒计时
-- [x] TypeScript 严格模式
-- [x] 组件化设计，职责清晰
-- [x] 响应式布局，适配 PC 和移动端
+This project includes a [GitHub Actions workflow](.github/workflows/build-mac.yml) for automated macOS builds:
+
+1. Push to GitHub
+2. Go to **Actions** → **Build Mac DMG** → **Run workflow**
+3. Download the built `.dmg` artifact
+
+Or build manually on a Mac:
+
+```bash
+npm run tauri:build -- --bundles dmg
+```
+
+## Contributing
+
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## Code of Conduct
+
+All contributors are expected to adhere to the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history.
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
+
+## Acknowledgments
+
+- Inspired by the Pomodoro Technique® by Francesco Cirillo
+- Built with [Tauri](https://tauri.app/), [React](https://react.dev/), and [TypeScript](https://www.typescriptlang.org/)
+- Icons by [Phosphor Icons](https://phosphoricons.com/)

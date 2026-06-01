@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local development artifacts
+.claude/
+.playwright-mcp/
+.superpowers/
+
+# OS files
+Thumbs.db
+
+# Screenshots (for local reference only)
+main-closed.png
+main-page.png
+settings-olddata.png
+settings-scrolled.png
+layout-check.png
+layout-full.png
+layout-wide.png
+drag-hover.png
+drag-hover2.png
+completed-time.png
