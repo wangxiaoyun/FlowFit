@@ -13,6 +13,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write  # 允许创建 Release
+
 jobs:
   build-mac:
     runs-on: macos-latest
