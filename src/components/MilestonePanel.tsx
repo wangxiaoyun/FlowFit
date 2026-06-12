@@ -1,27 +1,36 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
-  Plus,
-  Trash,
-  Check,
+  ArrowRight,
   CaretDown,
   CaretRight,
-  Flag,
-  ArrowRight,
+  Check,
   DotsSixVertical,
+  Flag,
+  Paperclip,
+  Plus,
+  Trash,
 } from "@phosphor-icons/react";
+import type { MilestoneTask } from "../types";
 import { useMilestoneStore } from "../store/milestoneStore";
 import { useTaskStore } from "../store/taskStore";
+import { useTimerStore } from "../store/timerStore";
+import { MilestoneTaskDetailDrawer } from "./MilestoneTaskDetailDrawer";
 
-/** 单个里程碑卡片，含折叠/展开、子任务管理 */
+interface SelectedTask {
+  milestoneId: string;
+  taskId: string;
+}
+
 function MilestoneCard({
   id,
   isDragging,
   onTitleBarPointerDown,
+  onOpenTask,
 }: {
   id: string;
   isDragging?: boolean;
-  /** 标题行按下时触发拖拽（排除按钮区域后由调用方传入） */
   onTitleBarPointerDown?: (e: React.PointerEvent) => void;
+  onOpenTask: (taskId: string) => void;
 }) {
   const {
     milestones,
@@ -36,7 +45,6 @@ function MilestoneCard({
   const milestone = milestones.find((m) => m.id === id);
   const [taskInput, setTaskInput] = useState("");
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  // 正在内联编辑完成时间的任务 id 及临时值
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [editingTimeVal, setEditingTimeVal] = useState("");
 
@@ -45,8 +53,8 @@ function MilestoneCard({
   const done = milestone.tasks.filter((t) => t.done).length;
   const total = milestone.tasks.length;
 
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddTask = (event: React.FormEvent) => {
+    event.preventDefault();
     addMilestoneTask(id, taskInput);
     setTaskInput("");
   };
@@ -57,25 +65,24 @@ function MilestoneCard({
       const next = new Set(prev);
       next.add(taskId);
       setTimeout(() => {
-        setAddedIds((s) => {
-          const ns = new Set(s);
-          ns.delete(taskId);
-          return ns;
+        setAddedIds((current) => {
+          const updated = new Set(current);
+          updated.delete(taskId);
+          return updated;
         });
       }, 1500);
       return next;
     });
   };
 
-  const startEditTime = (taskId: string, val: string) => {
-    setEditingTimeId(taskId);
-    setEditingTimeVal(val);
+  const startEditTime = (event: React.MouseEvent, task: MilestoneTask) => {
+    event.stopPropagation();
+    setEditingTimeId(task.id);
+    setEditingTimeVal(task.completedAt ?? "");
   };
 
-  const saveEditTime = (milestoneId: string, taskId: string) => {
-    if (editingTimeVal.trim()) {
-      updateTaskCompletedAt(milestoneId, taskId, editingTimeVal.trim());
-    }
+  const saveEditTime = (taskId: string) => {
+    updateTaskCompletedAt(id, taskId, editingTimeVal.trim());
     setEditingTimeId(null);
   };
 
@@ -85,25 +92,20 @@ function MilestoneCard({
         isDragging ? "opacity-40" : "opacity-100"
       }`}
     >
-      {/* 标题行：整行可拖拽（排除按钮区域），hover 时背景 + 左侧竖线 + 把手图标同步显现 */}
       <div
         className="relative flex cursor-grab items-center gap-2 rounded-t-xl px-3 py-3 transition-colors hover:bg-neutral-100 active:cursor-grabbing dark:hover:bg-white/8"
         title="拖拽调整优先级"
         onPointerDown={onTitleBarPointerDown}
       >
-        {/* 左侧可拖拽提示竖线，hover 时显现 */}
-        <div className="absolute bottom-1 left-0 top-1 w-0.5 rounded-full bg-transparent transition-colors group-hover/milestone:bg-pomodoro-300 dark:group-hover/milestone:bg-pomodoro-700" />
-
-        {/* 把手图标：hover 时从隐藏变为清晰可见 */}
         <div className="shrink-0 select-none text-neutral-500 opacity-0 transition-opacity group-hover/milestone:opacity-100 dark:text-neutral-400">
           <DotsSixVertical size={15} weight="bold" />
         </div>
 
         <button
           onClick={() => toggleCollapse(id)}
-          onPointerDown={(e) => e.stopPropagation()} // 阻止触发拖拽
+          onPointerDown={(event) => event.stopPropagation()}
           className="shrink-0 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-          aria-label={milestone.collapsed ? "展开" : "折叠"}
+          aria-label={milestone.collapsed ? "展开目标" : "折叠目标"}
         >
           {milestone.collapsed ? (
             <CaretRight size={14} weight="bold" />
@@ -130,9 +132,9 @@ function MilestoneCard({
 
         <button
           onClick={() => removeMilestone(id)}
-          onPointerDown={(e) => e.stopPropagation()} // 阻止触发拖拽
+          onPointerDown={(event) => event.stopPropagation()}
           className="shrink-0 text-neutral-300 opacity-0 transition-opacity hover:text-red-500 group-hover/milestone:opacity-100 dark:text-neutral-600"
-          aria-label={`删除里程碑"${milestone.title}"`}
+          aria-label={`删除目标 ${milestone.title}`}
         >
           <Trash size={15} />
         </button>
@@ -153,11 +155,19 @@ function MilestoneCard({
             {milestone.tasks.map((task) => {
               const added = addedIds.has(task.id);
               const isEditingTime = editingTimeId === task.id;
+              const attachmentCount = task.attachments?.length ?? 0;
               return (
                 <li key={task.id} className="group/task">
-                  <div className="flex items-center gap-2">
+                  <div
+                    onClick={() => onOpenTask(task.id)}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900/70"
+                    title="点击查看子任务详情"
+                  >
                     <button
-                      onClick={() => toggleMilestoneTask(id, task.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleMilestoneTask(id, task.id);
+                      }}
                       className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
                         task.done
                           ? "border-green-400 bg-green-400 dark:border-green-500 dark:bg-green-500"
@@ -167,8 +177,9 @@ function MilestoneCard({
                     >
                       {task.done && <Check size={10} weight="bold" className="text-white" />}
                     </button>
+
                     <span
-                      className={`flex-1 text-xs ${
+                      className={`min-w-0 flex-1 text-xs ${
                         task.done
                           ? "text-neutral-400 line-through dark:text-neutral-500"
                           : "text-neutral-700 dark:text-neutral-300"
@@ -176,55 +187,70 @@ function MilestoneCard({
                     >
                       {task.title}
                     </span>
+
+                    {attachmentCount > 0 && (
+                      <span className="flex items-center gap-0.5 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-400 dark:bg-neutral-700 dark:text-neutral-400">
+                        <Paperclip size={10} weight="bold" />
+                        {attachmentCount}
+                      </span>
+                    )}
+
                     {!task.done && (
                       <button
-                        onClick={() => handleAddToPomodoro(task.id, task.title)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleAddToPomodoro(task.id, task.title);
+                        }}
                         className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] opacity-0 transition-all group-hover/task:opacity-100 ${
                           added
                             ? "bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400"
                             : "text-neutral-400 hover:bg-pomodoro-50 hover:text-pomodoro-600 dark:hover:bg-pomodoro-500/10 dark:hover:text-pomodoro-400"
                         }`}
-                        aria-label={`将"${task.title}"加入今日任务`}
+                        aria-label={`将 ${task.title} 加入今日任务`}
                         title="加入今日番茄任务"
                       >
                         {added ? <Check size={10} weight="bold" /> : <ArrowRight size={10} weight="bold" />}
                         {added ? "已添加" : "加入任务"}
                       </button>
                     )}
+
                     <button
-                      onClick={() => removeMilestoneTask(id, task.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeMilestoneTask(id, task.id);
+                      }}
                       className="opacity-0 transition-opacity group-hover/task:opacity-100"
-                      aria-label={`删除"${task.title}"`}
+                      aria-label={`删除 ${task.title}`}
                     >
                       <Trash size={13} className="text-neutral-300 hover:text-red-400 dark:text-neutral-600" />
                     </button>
                   </div>
 
-                  {/* 完成时间行：已完成任务才显示 */}
                   {task.done && (
-                    <div className="mt-0.5 flex items-center gap-1 pl-6">
+                    <div className="mt-0.5 flex items-center gap-1 pl-7">
                       {isEditingTime ? (
                         <input
                           autoFocus
                           type="text"
                           value={editingTimeVal}
-                          onChange={(e) => setEditingTimeVal(e.target.value)}
-                          onBlur={() => saveEditTime(id, task.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveEditTime(id, task.id);
-                            if (e.key === "Escape") setEditingTimeId(null);
+                          onChange={(event) => setEditingTimeVal(event.target.value)}
+                          onBlur={() => saveEditTime(task.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") saveEditTime(task.id);
+                            if (event.key === "Escape") setEditingTimeId(null);
                           }}
                           className="w-full rounded border border-pomodoro-300 bg-white px-1.5 py-0.5 font-mono text-[10px] text-neutral-600 focus:outline-none dark:border-pomodoro-700 dark:bg-neutral-900 dark:text-neutral-400"
                           placeholder="yyyy-MM-dd HH:mm:ss"
+                          onClick={(event) => event.stopPropagation()}
                         />
                       ) : (
-                        <span
+                        <button
                           className="cursor-text font-mono text-[10px] text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-400"
                           title="点击编辑完成时间"
-                          onClick={() => startEditTime(task.id, task.completedAt ?? "")}
+                          onClick={(event) => startEditTime(event, task)}
                         >
-                          {task.completedAt ?? "—"}
-                        </span>
+                          {task.completedAt ?? "-"}
+                        </button>
                       )}
                     </div>
                   )}
@@ -237,7 +263,7 @@ function MilestoneCard({
             <input
               type="text"
               value={taskInput}
-              onChange={(e) => setTaskInput(e.target.value)}
+              onChange={(event) => setTaskInput(event.target.value)}
               placeholder="添加子任务..."
               maxLength={100}
               className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-800 placeholder-neutral-400 focus:border-pomodoro-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:placeholder-neutral-600"
@@ -257,65 +283,66 @@ function MilestoneCard({
   );
 }
 
-/** 项目阶段目标面板，支持 Pointer Events 拖拽排序（兼容 Tauri WebView） */
 export function MilestonePanel() {
   const { milestones, addMilestone, reorderMilestones } = useMilestoneStore();
+  const dataPath = useTimerStore((s) => s.settings.dataPath);
   const [input, setInput] = useState("");
   const [adding, setAdding] = useState(false);
-
+  const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const dragFromRef = useRef<number | null>(null);
   const overIndexRef = useRef<number | null>(null);
   const itemsRef = useRef<(HTMLLIElement | null)[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const selected = useMemo(() => {
+    if (!selectedTask) return null;
+    const milestone = milestones.find((item) => item.id === selectedTask.milestoneId);
+    const task = milestone?.tasks.find((item) => item.id === selectedTask.taskId);
+    return milestone && task ? { milestone, task } : null;
+  }, [milestones, selectedTask]);
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     addMilestone(input);
     setInput("");
     setAdding(false);
   };
 
-  /**
-   * 标题行按下时启动拖拽。
-   * 使用 setPointerCapture 保证鼠标移出元素后事件仍路由到此处，
-   * 同时在 document 监听 pointermove/pointerup 计算目标位置。
-   */
-  const startDrag = (e: React.PointerEvent, index: number) => {
-    // 只响应主键（左键/触摸），忽略右键等
-    if (e.button !== undefined && e.button !== 0) return;
-    e.preventDefault();
-    // 捕获 pointer，防止移出时丢失事件
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  const startDrag = (event: React.PointerEvent, index: number) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 
     dragFromRef.current = index;
     overIndexRef.current = index;
     setDragIndex(index);
     setOverIndex(index);
 
-    const onMove = (ev: PointerEvent) => {
-      const items = itemsRef.current;
-      const valid = items.filter(Boolean) as HTMLLIElement[];
+    const onMove = (moveEvent: PointerEvent) => {
+      const valid = itemsRef.current.filter(Boolean) as HTMLLIElement[];
       if (valid.length === 0) return;
 
       const firstRect = valid[0].getBoundingClientRect();
-      if (ev.clientY < firstRect.top) {
+      if (moveEvent.clientY < firstRect.top) {
         overIndexRef.current = 0;
         setOverIndex(0);
         return;
       }
+
       const lastRect = valid[valid.length - 1].getBoundingClientRect();
-      if (ev.clientY > lastRect.bottom) {
+      if (moveEvent.clientY > lastRect.bottom) {
         const last = valid.length - 1;
         overIndexRef.current = last;
         setOverIndex(last);
         return;
       }
-      for (let i = 0; i < items.length; i++) {
-        const el = items[i];
+
+      for (let i = 0; i < itemsRef.current.length; i++) {
+        const el = itemsRef.current[i];
         if (!el) continue;
         const rect = el.getBoundingClientRect();
-        if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+        if (moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom) {
           overIndexRef.current = i;
           setOverIndex(i);
           break;
@@ -326,9 +353,7 @@ export function MilestonePanel() {
     const onUp = () => {
       const from = dragFromRef.current;
       const to = overIndexRef.current;
-      if (from !== null && to !== null && from !== to) {
-        reorderMilestones(from, to);
-      }
+      if (from !== null && to !== null && from !== to) reorderMilestones(from, to);
       dragFromRef.current = null;
       overIndexRef.current = null;
       setDragIndex(null);
@@ -349,9 +374,9 @@ export function MilestonePanel() {
           项目目标
         </h2>
         <button
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => setAdding((value) => !value)}
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-          aria-label="添加里程碑"
+          aria-label="添加目标"
         >
           <Plus size={13} weight="bold" />
           添加
@@ -364,8 +389,8 @@ export function MilestonePanel() {
             autoFocus
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setAdding(false)}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => event.key === "Escape" && setAdding(false)}
             placeholder="阶段目标名称..."
             maxLength={80}
             className="min-w-0 flex-1 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-pomodoro-400 focus:outline-none focus:ring-2 focus:ring-pomodoro-400/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white dark:placeholder-neutral-500"
@@ -387,23 +412,35 @@ export function MilestonePanel() {
       )}
 
       <ul className="space-y-2">
-        {milestones.map((m, i) => (
+        {milestones.map((milestone, index) => (
           <li
-            key={m.id}
-            ref={(el) => { itemsRef.current[i] = el; }}
+            key={milestone.id}
+            ref={(el) => {
+              itemsRef.current[index] = el;
+            }}
             className="group/milestone relative"
           >
-            {overIndex === i && dragIndex !== null && dragIndex !== i && (
+            {overIndex === index && dragIndex !== null && dragIndex !== index && (
               <div className="pointer-events-none absolute -top-1 inset-x-0 z-10 h-0.5 rounded-full bg-pomodoro-500" />
             )}
             <MilestoneCard
-              id={m.id}
-              isDragging={dragIndex === i}
-              onTitleBarPointerDown={(e) => startDrag(e, i)}
+              id={milestone.id}
+              isDragging={dragIndex === index}
+              onTitleBarPointerDown={(event) => startDrag(event, index)}
+              onOpenTask={(taskId) => setSelectedTask({ milestoneId: milestone.id, taskId })}
             />
           </li>
         ))}
       </ul>
+
+      {selected && (
+        <MilestoneTaskDetailDrawer
+          milestone={selected.milestone}
+          task={selected.task}
+          dataPath={dataPath}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </section>
   );
 }

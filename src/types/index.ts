@@ -11,7 +11,7 @@ export interface Task {
   pomodoroCount: number;
   completed: boolean;
   createdAt: number;
-  date: string; // YYYY-MM-DD，任务所属日期
+  date: string; // YYYY-MM-DD
 }
 
 /** Daily statistics snapshot */
@@ -35,15 +35,15 @@ export interface Settings {
   soundEnabled: boolean;
   volume: number;           // 0-1
   desktopNotify: boolean;   // browser Notification API
-  dataPath: string;         // 本地数据文件目录（空 = 仅 localStorage）
+  dataPath: string;         // local data directory; empty means localStorage only
   /** Pelvic-floor activity settings */
   kegelEnabled: boolean;
-  kegelReps: number;        // 每次引导的组数
-  kegelHoldSeconds: number; // 每组收缩保持秒数
+  kegelReps: number;
+  kegelHoldSeconds: number;
   /** Post-focus rest activity preference */
   restPreferenceSet: boolean;
   restActivityType: RestActivityType;
-  /** DeepSeek API Key（空 = 未配置，降级为 Google 翻译） */
+  /** DeepSeek API key; empty means report generation is disabled */
   deepseekApiKey: string;
 }
 
@@ -79,12 +79,27 @@ export interface ReportRawData {
 export interface Report {
   id: string;
   type: "daily" | "weekly";
-  /** 日报: "2026-05-20"；周报: "2026-05-18~2026-05-24" */
+  /** Daily report: "2026-05-20"; weekly report: "2026-05-18~2026-05-24" */
   period: string;
   content: string;
   rawData: ReportRawData;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A persisted attachment associated with a task-like record. */
+export type TaskAttachmentKind = "image" | "document";
+export type TaskAttachmentSource = "paste" | "upload";
+
+export interface TaskAttachment {
+  id: string;
+  kind: TaskAttachmentKind;
+  name: string;
+  mimeType: string;
+  size: number;
+  relativePath: string;
+  source: TaskAttachmentSource;
+  createdAt: number;
 }
 
 /** A single task within a milestone */
@@ -93,7 +108,9 @@ export interface MilestoneTask {
   title: string;
   done: boolean;
   createdAt: number;
-  completedAt?: string; // yyyy-MM-dd HH:mm:ss，勾选时自动写入，可手动编辑
+  completedAt?: string; // yyyy-MM-dd HH:mm:ss
+  description?: string;
+  attachments?: TaskAttachment[];
 }
 
 /** A project milestone / phase goal */

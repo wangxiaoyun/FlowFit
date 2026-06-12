@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useTimerStore } from "../store/timerStore";
 import { useTaskStore } from "../store/taskStore";
 import { playNotification, playBreakOver } from "../utils/audio";
+import { isTauri } from "../utils/fileStorage";
 import {
   requestDesktopPermission,
   sendDesktopNotification,
@@ -73,6 +74,7 @@ export function useTimer() {
 
   // 监听弹窗发出的 kegel-done 事件，触发 completePhase
   useEffect(() => {
+    if (!isTauri) return;
     const unlistenPromise = listen("kegel-done", () => {
       finishKegelRef.current();
     });

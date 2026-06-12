@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import type { Milestone, MilestoneTask } from "../types";
+import type { Milestone, MilestoneTask, TaskAttachment } from "../types";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
 import { STORAGE_KEYS } from "../constants";
 import { writeDataFile } from "../utils/fileStorage";
 import { useTimerStore } from "./timerStore";
+import { removeAttachmentFile } from "../utils/taskAttachments";
 
 interface MilestoneStore {
   milestones: Milestone[];
@@ -18,6 +19,21 @@ interface MilestoneStore {
   removeMilestoneTask: (milestoneId: string, taskId: string) => void;
   toggleMilestoneTask: (milestoneId: string, taskId: string) => void;
   updateTaskCompletedAt: (milestoneId: string, taskId: string, completedAt: string) => void;
+  updateMilestoneTaskDetails: (
+    milestoneId: string,
+    taskId: string,
+    details: Partial<Pick<MilestoneTask, "title" | "description" | "completedAt">>,
+  ) => void;
+  addMilestoneTaskAttachment: (
+    milestoneId: string,
+    taskId: string,
+    attachment: TaskAttachment,
+  ) => void;
+  removeMilestoneTaskAttachment: (
+    milestoneId: string,
+    taskId: string,
+    attachmentId: string,
+  ) => void;
 }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -41,6 +57,14 @@ function persist(milestones: Milestone[]) {
   if (dp) writeDataFile(dp, "pomodoro-milestones.json", milestones).catch(() => {});
 }
 
+function cleanupAttachments(attachments: TaskAttachment[] | undefined) {
+  const dp = getDataPath();
+  if (!dp || !attachments?.length) return;
+  attachments.forEach((attachment) => {
+    removeAttachmentFile(dp, attachment).catch(() => {});
+  });
+}
+
 export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
   milestones: loadFromStorage<Milestone[]>(STORAGE_KEYS.MILESTONES, []),
 
@@ -60,6 +84,8 @@ export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
   },
 
   removeMilestone: (id: string) => {
+    const removed = get().milestones.find((m) => m.id === id);
+    removed?.tasks.forEach((task) => cleanupAttachments(task.attachments));
     const milestones = get().milestones.filter((m) => m.id !== id);
     persist(milestones);
     set({ milestones });
@@ -108,6 +134,10 @@ export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
   },
 
   removeMilestoneTask: (milestoneId: string, taskId: string) => {
+    const removed = get()
+      .milestones.find((m) => m.id === milestoneId)
+      ?.tasks.find((t) => t.id === taskId);
+    cleanupAttachments(removed?.attachments);
     const milestones = get().milestones.map((m) =>
       m.id === milestoneId
         ? { ...m, tasks: m.tasks.filter((t) => t.id !== taskId) }
@@ -149,6 +179,71 @@ export const useMilestoneStore = create<MilestoneStore>((set, get) => ({
           }
         : m,
     );
+    persist(milestones);
+    set({ milestones });
+  },
+
+  updateMilestoneTaskDetails: (milestoneId, taskId, details) => {
+    const milestones = get().milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            tasks: m.tasks.map((t) => {
+              if (t.id !== taskId) return t;
+              const nextTitle = details.title?.trim();
+              return {
+                ...t,
+                ...(nextTitle ? { title: nextTitle } : {}),
+                ...(details.description !== undefined
+                  ? { description: details.description }
+                  : {}),
+                ...(details.completedAt !== undefined
+                  ? { completedAt: details.completedAt || undefined }
+                  : {}),
+              };
+            }),
+          }
+        : m,
+    );
+    persist(milestones);
+    set({ milestones });
+  },
+
+  addMilestoneTaskAttachment: (milestoneId, taskId, attachment) => {
+    const milestones = get().milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            tasks: m.tasks.map((t) =>
+              t.id === taskId
+                ? { ...t, attachments: [...(t.attachments ?? []), attachment] }
+                : t,
+            ),
+          }
+        : m,
+    );
+    persist(milestones);
+    set({ milestones });
+  },
+
+  removeMilestoneTaskAttachment: (milestoneId, taskId, attachmentId) => {
+    let removed: TaskAttachment | undefined;
+    const milestones = get().milestones.map((m) =>
+      m.id === milestoneId
+        ? {
+            ...m,
+            tasks: m.tasks.map((t) => {
+              if (t.id !== taskId) return t;
+              removed = t.attachments?.find((item) => item.id === attachmentId);
+              return {
+                ...t,
+                attachments: (t.attachments ?? []).filter((item) => item.id !== attachmentId),
+              };
+            }),
+          }
+        : m,
+    );
+    cleanupAttachments(removed ? [removed] : undefined);
     persist(milestones);
     set({ milestones });
   },
